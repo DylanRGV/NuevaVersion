@@ -24,7 +24,7 @@ form?.addEventListener("submit", async (e) => {
   const { error } = await supabase.from("Base").insert([nuevoJugador]);
 
   if (error) {
-    console.error("❌ Error al insertar:", error.message);
+    console.error("Error al insertar:", error.message);
     return;
   }
 
@@ -87,7 +87,7 @@ supabase
       table: "Base",
     },
     (payload) => {
-      console.log("📥 Nuevo jugador detectado en tiempo real:", payload.new);
+      console.log("Nuevo jugador detectado en tiempo real:", payload.new);
       cargarJugadores();
     }
   )
