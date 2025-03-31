@@ -22,7 +22,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       const fila = document.createElement("tr");
       fila.innerHTML = `
         <td>${j.nombre}</td>
-        <td>${j.horas_jugadas}</td>
+        <td>${j.tiempo_jugado}</td>
         <td>${j.decisiones_acosador}</td>
         <td>${j.decisiones_victima}</td>
         <td>${j.decisiones_observador_pasivo}</td>
