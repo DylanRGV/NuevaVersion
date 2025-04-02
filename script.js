@@ -67,35 +67,37 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
     )
     .subscribe();
+
+    async function exportarCSV() {
+      const { data, error } = await supabase.from("Base").select("*");
+      if (error) {
+        console.error("Error al exportar:", error.message);
+        return;
+      }
+    
+      if (!data || data.length === 0) {
+        alert("No hay datos para exportar.");
+        return;
+      }
+    
+      const encabezados = Object.keys(data[0]).join(",");
+      const filas = data.map(fila =>
+        Object.values(fila)
+          .map(valor => `"${valor}"`) // Maneja textos con comas
+          .join(",")
+      ).join("\n");
+    
+      const csv = [encabezados, filas].join("\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+    
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", "jugadores_supabase.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+    
 });
 
-async function exportarCSV() {
-  const { data, error } = await supabase.from("Base").select("*");
-  if (error) {
-    console.error("❌ Error al exportar:", error.message);
-    return;
-  }
-
-  if (!data || data.length === 0) {
-    alert("No hay datos para exportar.");
-    return;
-  }
-
-  const encabezados = Object.keys(data[0]).join(",");
-  const filas = data.map(fila =>
-    Object.values(fila)
-      .map(valor => `"${valor}"`) // Maneja textos con comas
-      .join(",")
-  ).join("\n");
-
-  const csv = [encabezados, filas].join("\n");
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-
-  const link = document.createElement("a");
-  link.setAttribute("href", url);
-  link.setAttribute("download", "jugadores_supabase.csv");
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-}
