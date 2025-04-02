@@ -1,10 +1,10 @@
 // Asegúrate de que este archivo se cargue después del script de Supabase en tu HTML
 
-document.addEventListener("DOMContentLoaded", async () => {
-  const supabaseUrl = 'https://tdvdhqhvzwqyvezunwwh.supabase.co';
-  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkdmRocWh2endxeXZlenVud3doIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMxMjg0MTksImV4cCI6MjA1ODcwNDQxOX0.pZ1GzHfUjZ1i1LI5bLZhAa_rtQk82O-9xkRKbQeQkfc';
-  const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+const supabaseUrl = 'https://tdvdhqhvzwqyvezunwwh.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkdmRocWh2endxeXZlenVud3doIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMxMjg0MTksImV4cCI6MjA1ODcwNDQxOX0.pZ1GzHfUjZ1i1LI5bLZhAa_rtQk82O-9xkRKbQeQkfc';
+const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
+document.addEventListener("DOMContentLoaded", async () => {
   const tabla = document.getElementById("tabla-jugadores");
 
   // Mostrar todos los jugadores
