@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es">git add index.html
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -67,5 +68,25 @@
 
   <!-- Tu script personalizado -->
   <script src="script.js"></script>
+
+  <div class="mt-5">
+      <h2>Análisis del grupo</h2>
+      <button class="btn btn-success mb-3" onclick="mostrarAnalisis()">Ver análisis completo</button>
+      <pre id="resultadoAnalisis" style="white-space: pre-wrap; background-color: #fff; padding: 1em; border-radius: 5px;"></pre>
+    </div>
+
+    <script>
+      function mostrarAnalisis() {
+        fetch('/api/analizar') // <-- este endpoint ya debe existir en Vercel
+          .then(res => res.text())
+          .then(data => {
+            document.getElementById('resultadoAnalisis').textContent = data;
+          })
+          .catch(err => {
+            document.getElementById('resultadoAnalisis').textContent = "Error al cargar el análisis.";
+            console.error(err);
+          });
+      }
+    </script>
 </body>
 </html>
