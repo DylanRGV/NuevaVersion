@@ -74,19 +74,9 @@
       <button class="btn btn-success mb-3" onclick="mostrarAnalisis()">Ver análisis completo</button>
       <pre id="resultadoAnalisis" style="white-space: pre-wrap; background-color: #fff; padding: 1em; border-radius: 5px;"></pre>
     </div>
+    
+  <script type="module" src="./analisis.js"></script>
+  <pre id="resultado">Cargando análisis...</pre>
 
-    <script>
-      function mostrarAnalisis() {
-        fetch('/api/analizar') // <-- este endpoint ya debe existir en Vercel
-          .then(res => res.text())
-          .then(data => {
-            document.getElementById('resultadoAnalisis').textContent = data;
-          })
-          .catch(err => {
-            document.getElementById('resultadoAnalisis').textContent = "Error al cargar el análisis.";
-            console.error(err);
-          });
-      }
-    </script>
 </body>
 </html>
