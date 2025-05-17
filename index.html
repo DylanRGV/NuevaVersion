@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<html lang="es">
 
 <head>
   <meta charset="UTF-8">
@@ -28,24 +29,37 @@
       margin: auto;
     }
 
-    .table th, .table td {
+    .table th,
+    .table td {
       vertical-align: middle;
       font-size: 14px;
     }
+
+    #resultado {
+      background-color: #fff;
+      padding: 1.5rem;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      white-space: pre-wrap;
+      font-family: monospace;
+      font-size: 1rem;
+      color: #111;
+    }
   </style>
 </head>
+
 <body>
   <div class="container">
     <h1>Dashboard de Jugadores</h1>
 
-<!--  Botón para exportar CSV -->
-<div class="d-flex justify-content-end mb-3">
-  <button onclick="exportarCSV()" class="btn btn-success">
-    Descargar CSV
-  </button>
-</div>
+    <!-- Botón para exportar CSV -->
+    <div class="d-flex justify-content-end mb-3">
+      <button onclick="exportarCSV()" class="btn btn-success">
+        Descargar CSV
+      </button>
+    </div>
 
-
+    <!-- Tabla de jugadores -->
     <table class="table table-bordered table-hover">
       <thead class="table-dark">
         <tr>
@@ -63,14 +77,19 @@
       </thead>
       <tbody id="tabla-jugadores"></tbody>
     </table>
+
+    <!-- Análisis del grupo -->
+    <div class="mt-5">
+      <h3 class="mb-3">🔍 Análisis General del Grupo</h3>
+      <pre id="resultado">Cargando análisis...</pre>
+    </div>
   </div>
 
-  <!-- Tu script personalizado -->
+  <!-- Script de la tabla -->
   <script src="script.js"></script>
 
-
+  <!-- Script del análisis fuzzy -->
   <script type="module" src="./analisis.js"></script>
-  <pre id="resultado">Cargando análisis...</pre>
-
 </body>
+
 </html>
