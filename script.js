@@ -29,6 +29,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         <td>${j.decisiones_observador_activo}</td>
         <td>${j.final_obtenido || ''}</td>
         <td>${j.tiempo_decision}</td>
+        <td>${j.decisiones || ''}</td>
         <td><button class="btn btn-danger btn-sm" onclick="eliminarJugador(${j.id})">Eliminar</button></td>
       `;
       tabla.appendChild(fila);
