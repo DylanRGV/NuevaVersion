@@ -1,95 +1,132 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard Jugadores</title>
-
-  <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-
-  <!-- Bootstrap CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-
   <style>
     body {
       background-color: #f8f9fa;
       font-family: 'Segoe UI', sans-serif;
       padding: 2rem;
     }
-
     h1 {
       text-align: center;
       margin-bottom: 2rem;
     }
-
     .container {
       max-width: 1100px;
       margin: auto;
     }
-
-    .table th,
-    .table td {
+    .table th, .table td {
       vertical-align: middle;
       font-size: 14px;
     }
-
-    #resultado {
-      background-color: #fff;
-      padding: 1.5rem;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-      white-space: pre-wrap;
-      font-family: monospace;
-      font-size: 1rem;
-      color: #111;
+    input {
+      font-size: 14px;
+    }
+    /* Estilo para el logo */
+    #logoInstitucion {
+      max-height: 80px;
     }
   </style>
 </head>
-
 <body>
   <div class="container">
+    <!-- 🔽 NUEVA SECCIÓN: Logo de la institución 🔽 -->
+    <div class="d-flex justify-content-end mb-4">
+      
+      <img id="logoInstitucion" src="cuceilogo.jpg" alt="Logo Institución">
+    </div>
+    
+
     <h1>Dashboard de Jugadores</h1>
 
-    <!-- Botón para exportar CSV -->
-    <div class="d-flex justify-content-end mb-3">
-      <button onclick="exportarCSV()" class="btn btn-success">
-        Descargar CSV
-      </button>
-    </div>
+    <form id="jugadorForm" class="mb-4">
+      <div class="row g-2 mb-2">
+        <div class="col-md-3">
+          <input type="text" class="form-control" id="nombre" placeholder="Nombre" required>
+        </div>
+        <div class="col-md-2">
+          <input type="number" class="form-control" id="horas_jugadas" placeholder="Horas jugadas" required>
+        </div>
+        <div class="col-md-2">
+          <input type="number" class="form-control" id="decisiones_acosador" placeholder="Acosador" required>
+        </div>
+        <div class="col-md-2">
+          <input type="number" class="form-control" id="decisiones_victima" placeholder="Víctima" required>
+        </div>
+        <div class="col-md-3">
+          <input type="text" class="form-control" id="final_obtenido" placeholder="Final obtenido" required>
+        </div>
+      </div>
 
-    <!-- Tabla de jugadores -->
+      <div class="row g-2 mb-2">
+        <div class="col-md-3">
+          <input type="number" class="form-control" id="decisiones_observador_pasivo" placeholder="Obs. Pasivo" required>
+        </div>
+        <div class="col-md-3">
+          <input type="number" class="form-control" id="decisiones_observador_activo" placeholder="Obs. Activo" required>
+        </div>
+        <div class="col-md-3">
+          <input type="number" class="form-control" id="tiempo_decision" placeholder="Tiempo decisión" required>
+        </div>
+        <div class="col-md-3">
+          <input type="number" class="form-control" id="tiempo_mouse" placeholder="Tiempo mouse" required>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-2 ms-auto">
+          <button type="submit" class="btn btn-primary w-100">Agregar</button>
+        </div>
+      </div>
+    </form>
+
     <table class="table table-bordered table-hover">
       <thead class="table-dark">
         <tr>
           <th>Nombre</th>
-          <th>Tiempo_jugado</th>
+          <th>Horas</th>
           <th>Acosador</th>
           <th>Víctima</th>
           <th>Obs. Pasivo</th>
           <th>Obs. Activo</th>
           <th>Final</th>
           <th>Tiempo Decisión</th>
-          <th>Decisiones</th>
+          <th>Decision</th>
           <th>Acción</th>
         </tr>
       </thead>
       <tbody id="tabla-jugadores"></tbody>
     </table>
 
-    <!-- Análisis del grupo -->
+    
     <div class="mt-5">
-      <h3 class="mb-3">🔍 Análisis General del Grupo</h3>
-      <pre id="resultado">Cargando análisis...</pre>
+      <h2>Análisis del grupo</h2>
+      <button class="btn btn-success mb-3" onclick="mostrarAnalisis()">Ver análisis completo</button>
+      <pre id="resultadoAnalisis" style="white-space: pre-wrap; background-color: #fff; padding: 1em; border-radius: 5px;"></pre>
     </div>
+    
+
   </div>
 
-  <!-- Script de la tabla -->
   <script src="script.js"></script>
-
-  <!-- Script del análisis fuzzy -->
-  <script type="module" src="./analisis.js"></script>
+  <script>
+    // Función para mostrar el análisis del grupo
+    function mostrarAnalisis() {
+      fetch('/api/analizar')
+        .then(res => res.text())
+        .then(data => {
+          document.getElementById('resultadoAnalisis').textContent = data;
+        })
+        .catch(err => {
+          document.getElementById('resultadoAnalisis').textContent = "Error al cargar el análisis.";
+          console.error(err);
+        });
+    }
+  </script>
 </body>
-
 </html>
