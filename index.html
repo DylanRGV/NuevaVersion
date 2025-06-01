@@ -103,7 +103,7 @@
   <!-- Script para obtener el análisis desde /api/analizar -->
   <script>
     function mostrarAnalisis() {
-      fetch('/api/analizar')
+      fetch('/api/analisis')
         .then(res => res.text())
         .then(data => {
           document.getElementById('resultadoAnalisis').textContent = data;
