@@ -1,5 +1,5 @@
 const SUPABASE_URL = "https://tdvdhqhvzwqyvezunwwh.supabase.co/rest/v1/Base";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkdmRocWh2endxeXZlenVud3doIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMxMjg0MTksImV4cCI6MjA1ODcwNDQxOX0.pZ1GzHfUjZ1i1LI5bLZhAa_rtQk82O-9xkRKbQeQkfc"; // tu key completa
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkdmRocWh2endxeXZlenVud3doIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMxMjg0MTksImV4cCI6MjA1ODcwNDQxOX0.pZ1GzHfUjZ1i1LI5bLZhAa_rtQk82O-9xkRKbQeQkfc";
 
 function tiempoASegundos(tiempo) {
   try {
@@ -28,10 +28,10 @@ function clasificacionFuzzy(valor) {
 }
 
 function evaluarFuzzy(tj, td) {
-  if (tj <= 400 && td <= 40) return 20;       // Impulsivo
-  if (tj >= 1000 && td >= 120) return 80;     // Reflexivo
-  if (tj >= 300 && tj <= 1100 && td >= 30 && td <= 130) return 50; // Equilibrado
-  return 50; // Default equilibrado si no entra en otra regla
+  if (tj <= 400 && td <= 40) return 20;
+  if (tj >= 1000 && td >= 120) return 80;
+  if (tj >= 300 && tj <= 1100 && td >= 30 && td <= 130) return 50;
+  return 50;
 }
 
 async function analizarDatos() {
@@ -48,7 +48,6 @@ async function analizarDatos() {
     const data = await res.json();
     if (!data || data.length === 0) throw new Error("No hay datos");
 
-    // Preprocesamiento
     for (const row of data) {
       row.tiempo_jugado_seg = tiempoASegundos(row.tiempo_jugado || "");
       row.rol_dominante = rolDominante(row);
@@ -62,7 +61,6 @@ async function analizarDatos() {
       );
     }
 
-    // Estadísticas generales
     salida.push("--- ANÁLISIS GENERAL DEL GRUPO ---\n");
     salida.push(`Total de jugadores: ${data.length}`);
 
@@ -110,7 +108,6 @@ async function analizarDatos() {
     }
     salida.push(`Perfil dominante: ${perfilDominante}`);
 
-    // Correlación simplificada
     const avgX = promedio("tiempo_jugado_seg");
     const avgY = promedio("total_decisiones");
     const numerador = data.reduce((sum, r) => sum + ((r.tiempo_jugado_seg - avgX) * (r.total_decisiones - avgY)), 0);
@@ -162,6 +159,3 @@ async function analizarDatos() {
 }
 
 analizarDatos();
-</script>
-
-<pre id="resultado">Cargando análisis...</pre>
