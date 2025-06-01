@@ -101,19 +101,7 @@
   <script src="script.js"></script>
 
   <!-- Script para obtener el análisis desde /api/analizar -->
-  <script>
-    function mostrarAnalisis() {
-      fetch('/api/analisis')
-        .then(res => res.text())
-        .then(data => {
-          document.getElementById('resultadoAnalisis').textContent = data;
-        })
-        .catch(err => {
-          document.getElementById('resultadoAnalisis').textContent = "Error al cargar el análisis.";
-          console.error(err);
-        });
-    }
-  </script>
+  <script type="module" src="./analisis.js"></script>
 </body>
 
 </html>
