@@ -56,7 +56,7 @@
 
 <body>
   <div class="container">
-    
+    <!-- 🔽 Logo de la institución -->
     <div class="d-flex justify-content-end mb-4">
       <img id="logoInstitucion" src="cuceilogo.png" alt="Logo Institución" />
     </div>
@@ -89,16 +89,18 @@
       <tbody id="tabla-jugadores"></tbody>
     </table>
 
+    <!-- Análisis del grupo -->
     <div class="mt-5">
-      <h3 class="mb-3">🔍 Análisis General del Grupo</h3>
-      <pre id="resultado">Cargando análisis...</pre>
+      <h2>🔍 Análisis del grupo</h2>
+      <button class="btn btn-primary mb-3" onclick="mostrarAnalisis()">Ver análisis completo</button>
+      <pre id="resultadoAnalisis">Cargando análisis...</pre>
     </div>
   </div>
 
-  <!-- Script de la tabla -->
+  <!-- Script que maneja la tabla y la exportación -->
   <script src="script.js"></script>
 
-  <!-- Script del análisis fuzzy -->
+  
   <script type="module" src="./analisis.js"></script>
 </body>
 
