@@ -1,50 +1,52 @@
-export default async function handler(req, res) {
-  const SUPABASE_URL = "https://tdvdhqhvzwqyvezunwwh.supabase.co/rest/v1/Base";
-  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkdmRocWh2endxeXZlenVud3doIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMxMjg0MTksImV4cCI6MjA1ODcwNDQxOX0.pZ1GzHfUjZ1i1LI5bLZhAa_rtQk82O-9xkRKbQeQkfc";
+const SUPABASE_URL = "https://tdvdhqhvzwqyvezunwwh.supabase.co/rest/v1/Base";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkdmRocWh2endxeXZlenVud3doIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMxMjg0MTksImV4cCI6MjA1ODcwNDQxOX0.pZ1GzHfUjZ1i1LI5bLZhAa_rtQk82O-9xkRKbQeQkfc";
 
-  const fetch = (await import("node-fetch")).default;
-
-  function tiempoASegundos(t) {
-    try {
-      const [min, seg] = t.trim().split("m");
-      return parseInt(min) * 60 + parseInt(seg.replace("s", "").trim());
-    } catch {
-      return NaN;
-    }
+function tiempoASegundos(tiempo) {
+  try {
+    const [min, seg] = tiempo.replace("s", "").split("m");
+    return parseInt(min.trim()) * 60 + parseInt(seg.trim());
+  } catch {
+    return NaN;
   }
+}
 
-  function rolDominante(row) {
-    const roles = {
-      Acosador: row.decisiones_acosador,
-      Víctima: row.decisiones_victima,
-      "Observador Activo": row.decisiones_observador_activo,
-      "Observador Pasivo": row.decisiones_observador_pasivo,
-    };
-    return Object.keys(roles).reduce((a, b) => roles[a] > roles[b] ? a : b);
-  }
+function rolDominante(row) {
+  const roles = {
+    'Acosador': row.decisiones_acosador,
+    'Víctima': row.decisiones_victima,
+    'Observador Activo': row.decisiones_observador_activo,
+    'Observador Pasivo': row.decisiones_observador_pasivo
+  };
+  return Object.keys(roles).reduce((a, b) => roles[a] > roles[b] ? a : b);
+}
 
-  function clasificacionFuzzy(valor) {
-    if (isNaN(valor)) return "No clasificado";
-    if (valor < 35) return "Impulsivo";
-    if (valor < 65) return "Equilibrado";
-    return "Reflexivo";
-  }
+function clasificacionFuzzy(valor) {
+  if (isNaN(valor)) return "No clasificado";
+  if (valor < 35) return "Impulsivo";
+  if (valor < 65) return "Equilibrado";
+  return "Reflexivo";
+}
 
-  function evaluarFuzzy(tj, td) {
-    if (tj <= 400 && td <= 40) return 20;
-    if (tj >= 1000 && td >= 120) return 80;
-    if (tj >= 300 && tj <= 1100 && td >= 30 && td <= 130) return 50;
-    return 50;
-  }
+function evaluarFuzzy(tj, td) {
+  if (tj <= 400 && td <= 40) return 20;
+  if (tj >= 1000 && td >= 120) return 80;
+  if (tj >= 300 && tj <= 1100 && td >= 30 && td <= 130) return 50;
+  return 50;
+}
+
+async function analizarDatos() {
+  const salida = [];
 
   try {
-    const respuesta = await fetch(SUPABASE_URL, {
+    const res = await fetch(SUPABASE_URL, {
       headers: {
-        apikey: SUPABASE_KEY,
-        Authorization: `Bearer ${SUPABASE_KEY}`,
-      },
+        "apikey": SUPABASE_KEY,
+        "Authorization": `Bearer ${SUPABASE_KEY}`
+      }
     });
-    const data = await respuesta.json();
+
+    const data = await res.json();
+    if (!data || data.length === 0) throw new Error("No hay datos");
 
     for (const row of data) {
       row.tiempo_jugado_seg = tiempoASegundos(row.tiempo_jugado || "");
@@ -59,16 +61,15 @@ export default async function handler(req, res) {
       );
     }
 
-    const salida = [];
     salida.push("--- ANÁLISIS GENERAL DEL GRUPO ---\n");
     salida.push(`Total de jugadores: ${data.length}`);
 
     const suma = campo => data.reduce((acc, r) => acc + (r[campo] || 0), 0);
     const decisiones_totales = {
-      Acosador: suma("decisiones_acosador"),
-      Víctima: suma("decisiones_victima"),
-      "Observador Activo": suma("decisiones_observador_activo"),
-      "Observador Pasivo": suma("decisiones_observador_pasivo"),
+      'Acosador': suma('decisiones_acosador'),
+      'Víctima': suma('decisiones_victima'),
+      'Observador Activo': suma('decisiones_observador_activo'),
+      'Observador Pasivo': suma('decisiones_observador_pasivo')
     };
     const rolMasFrecuente = Object.keys(decisiones_totales).reduce((a, b) => decisiones_totales[a] > decisiones_totales[b] ? a : b);
 
@@ -91,9 +92,9 @@ export default async function handler(req, res) {
     }
     salida.push(`Final más frecuente: ${finalMasComun}`);
 
-    const promedio = campo => data.reduce((a, b) => a + (b[campo] || 0), 0) / data.length;
-    salida.push(`\nTiempo promedio jugado: ${promedio("tiempo_jugado_seg").toFixed(2)} segundos`);
-    salida.push(`Tiempo promedio de decisión: ${promedio("tiempo_decision").toFixed(2)} segundos`);
+    const promedio = (campo) => data.reduce((a, b) => a + (b[campo] || 0), 0) / data.length;
+    salida.push(`\nTiempo promedio jugado: ${promedio('tiempo_jugado_seg').toFixed(2)} segundos`);
+    salida.push(`Tiempo promedio de decisión: ${promedio('tiempo_decision').toFixed(2)} segundos`);
 
     const clasificaciones = {};
     for (const r of data) {
@@ -151,8 +152,10 @@ export default async function handler(req, res) {
       salida.push(`El final más frecuente fue '${finalMasComun}', lo cual puede ser un punto interesante para rediseñar ramas narrativas.`);
     }
 
-    res.status(200).send(salida.join("\n"));
+    document.getElementById("resultado").innerText = salida.join("\n");
   } catch (err) {
-    res.status(500).send("Error en el análisis: " + err.message);
+    document.getElementById("resultado").innerText = `❌ Error: ${err.message}`;
   }
 }
+
+analizarDatos();
