@@ -1,23 +1,19 @@
-// Asegúrate de que este archivo se cargue después del script de Supabase en tu HTML
-
+// Supabase init
 const supabaseUrl = 'https://tdvdhqhvzwqyvezunwwh.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkdmRocWh2endxeXZlenVud3doIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMxMjg0MTksImV4cCI6MjA1ODcwNDQxOX0.pZ1GzHfUjZ1i1LI5bLZhAa_rtQk82O-9xkRKbQeQkfc';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...';
 const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
 document.addEventListener("DOMContentLoaded", async () => {
   const tabla = document.getElementById("tabla-jugadores");
 
-  // Mostrar todos los jugadores
   async function cargarJugadores() {
     const { data, error } = await supabase.from("Base").select("*");
-
     if (error) {
       console.error("Error al cargar datos:", error.message);
       return;
     }
 
     tabla.innerHTML = "";
-
     data.forEach(j => {
       const fila = document.createElement("tr");
       fila.innerHTML = `
@@ -36,7 +32,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  // Eliminar jugador por ID
   async function eliminarJugador(id) {
     const { error } = await supabase.from("Base").delete().eq("id", id);
     if (error) {
@@ -45,32 +40,24 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
     cargarJugadores();
   }
-
-  // Hacer accesible la función desde el botón
   window.eliminarJugador = eliminarJugador;
 
-  // Inicial: cargar jugadores
   cargarJugadores();
 
-  // Realtime: escuchar nuevas inserciones
   supabase
     .channel("jugadores-stream")
     .on(
       "postgres_changes",
-      {
-        event: "INSERT",
-        schema: "public",
-        table: "Base",
-      },
+      { event: "INSERT", schema: "public", table: "Base" },
       (payload) => {
-        console.log("Nuevo jugador detectado en tiempo real:", payload.new);
+        console.log("Nuevo jugador detectado:", payload.new);
         cargarJugadores();
       }
     )
     .subscribe();
 });
 
-// ✅ Función para exportar CSV de manera global
+// ✅ Función para exportar CSV
 async function exportarCSV() {
   const { data, error } = await supabase.from("Base").select("*");
   if (error) {
@@ -85,9 +72,7 @@ async function exportarCSV() {
 
   const encabezados = Object.keys(data[0]).join(",");
   const filas = data.map(fila =>
-    Object.values(fila)
-      .map(valor => `"${valor}"`)
-      .join(",")
+    Object.values(fila).map(valor => `"${valor}"`).join(",")
   ).join("\n");
 
   const csv = [encabezados, filas].join("\n");
@@ -101,6 +86,17 @@ async function exportarCSV() {
   link.click();
   document.body.removeChild(link);
 }
-
-// Hacer accesible el exportarCSV para el botón
 window.exportarCSV = exportarCSV;
+
+// ✅ Función para mostrar el análisis
+async function mostrarAnalisis() {
+  try {
+    const respuesta = await fetch('/api/analizar');
+    const texto = await respuesta.text();
+    document.getElementById('resultadoAnalisis').textContent = texto;
+  } catch (err) {
+    document.getElementById('resultadoAnalisis').textContent = "Error al cargar el análisis.";
+    console.error(err);
+  }
+}
+window.mostrarAnalisis = mostrarAnalisis;
