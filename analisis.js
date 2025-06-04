@@ -79,6 +79,42 @@ async function analizarDatos() {
     }
     salida.push(`Rol más frecuente: ${rolMasFrecuente}`);
 
+    // --- AGREGADO: CREAR GRÁFICA ---
+    const ctx = document.getElementById("graficaRoles").getContext("2d");
+    if (window.grafica) window.grafica.destroy();
+    window.grafica = new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels: Object.keys(decisiones_totales),
+        datasets: [{
+          label: "Total de Decisiones por Rol",
+          data: Object.values(decisiones_totales),
+          backgroundColor: [
+            "rgba(255, 99, 132, 0.5)",
+            "rgba(54, 162, 235, 0.5)",
+            "rgba(255, 206, 86, 0.5)",
+            "rgba(75, 192, 192, 0.5)"
+          ],
+          borderColor: [
+            "rgba(255, 99, 132, 1)",
+            "rgba(54, 162, 235, 1)",
+            "rgba(255, 206, 86, 1)",
+            "rgba(75, 192, 192, 1)"
+          ],
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        }
+      }
+    });
+
+    // --- SIGUE TU CÓDIGO ---
     const finales = {};
     for (const r of data) {
       if (!r.final_obtenido) continue;
@@ -158,4 +194,5 @@ async function analizarDatos() {
   }
 }
 
-analizarDatos();
+// Esta función la llamas desde el botón
+window.mostrarAnalisis = analizarDatos;

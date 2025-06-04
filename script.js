@@ -1,5 +1,3 @@
-// Asegúrate de que este archivo se cargue después del script de Supabase en tu HTML
-
 const supabaseUrl = 'https://tdvdhqhvzwqyvezunwwh.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkdmRocWh2endxeXZlenVud3doIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMxMjg0MTksImV4cCI6MjA1ODcwNDQxOX0.pZ1GzHfUjZ1i1LI5bLZhAa_rtQk82O-9xkRKbQeQkfc';
 const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
@@ -7,7 +5,6 @@ const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 document.addEventListener("DOMContentLoaded", async () => {
   const tabla = document.getElementById("tabla-jugadores");
 
-  // Mostrar todos los jugadores
   async function cargarJugadores() {
     const { data, error } = await supabase.from("Base").select("*");
 
@@ -36,7 +33,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  // Eliminar jugador por ID
   async function eliminarJugador(id) {
     const { error } = await supabase.from("Base").delete().eq("id", id);
     if (error) {
@@ -46,13 +42,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     cargarJugadores();
   }
 
-  // Hacer accesible la función desde el botón
   window.eliminarJugador = eliminarJugador;
-
-  // Inicial: cargar jugadores
   cargarJugadores();
 
-  // Realtime: escuchar nuevas inserciones
   supabase
     .channel("jugadores-stream")
     .on(
@@ -69,7 +61,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     )
     .subscribe();
 
-  // Exportar CSV
   async function exportarCSV() {
     const { data, error } = await supabase.from("Base").select("*");
     if (error) {
@@ -85,7 +76,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const encabezados = Object.keys(data[0]).join(",");
     const filas = data.map(fila =>
       Object.values(fila)
-        .map(valor => `"${valor}"`) // Maneja textos con comas
+        .map(valor => `"${valor}"`)
         .join(",")
     ).join("\n");
 
@@ -101,8 +92,5 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.body.removeChild(link);
   }
 
-  // Hacer accesible exportarCSV para el botón
   window.exportarCSV = exportarCSV;
 });
-
-
