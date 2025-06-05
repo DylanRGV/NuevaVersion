@@ -139,36 +139,42 @@ async function analizarDatos() {
       document.querySelector(".container").appendChild(canvasGenero);
     }
 
-    const ctxGenero = canvasGenero.getContext("2d");
-    if (window.graficaGenero) window.graficaGenero.destroy();
-    window.graficaGenero = new Chart(ctxGenero, {
-      type: "bar",
-      data: {
-        labels: roles,
-        datasets: [
-          {
-            label: "Masculino",
-            data: decisionesGenero.masculino,
-            backgroundColor: "rgba(0, 0, 139, 0.5)", // azul marino
-            borderColor: "rgba(0, 0, 139, 1)",
-            borderWidth: 1
-          },
-          {
-            label: "Femenino",
-            data: decisionesGenero.femenino,
-            backgroundColor: "rgba(255, 105, 180, 0.5)", // rosa
-            borderColor: "rgba(255, 105, 180, 1)",
-            borderWidth: 1
-          }
-        ]
+  const ctxGenero = document.getElementById("graficaGenero").getContext("2d");
+
+// ✅ Verifica si existe y tiene la función destroy antes de llamar
+if (window.graficaGenero && typeof window.graficaGenero.destroy === "function") {
+  window.graficaGenero.destroy();
+}
+
+window.graficaGenero = new Chart(ctxGenero, {
+  type: "bar",
+  data: {
+    labels: roles,
+    datasets: [
+      {
+        label: "Masculino",
+        data: decisionesGenero.masculino,
+        backgroundColor: "rgba(0, 0, 139, 0.5)", // azul marino
+        borderColor: "rgba(0, 0, 139, 1)",
+        borderWidth: 1
       },
-      options: {
-        responsive: true,
-        scales: {
-          y: { beginAtZero: true }
-        }
+      {
+        label: "Femenino",
+        data: decisionesGenero.femenino,
+        backgroundColor: "rgba(255, 105, 180, 0.5)", // rosa
+        borderColor: "rgba(255, 105, 180, 1)",
+        borderWidth: 1
       }
-    });
+    ]
+  },
+  options: {
+    responsive: true,
+    scales: {
+      y: { beginAtZero: true }
+    }
+  }
+});
+
 
     // --- SIGUE TU CÓDIGO ---
     const finales = {};
