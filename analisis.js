@@ -34,43 +34,50 @@ function evaluarFuzzy(tj, td) {
   return 50;
 }
 
+async function cargarEscuelas() {
+  const res = await fetch(SUPABASE_URL, {
+    headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` }
+  });
+  const data = await res.json();
+  const escuelas = new Set(data.map(r => r.escuela || "").filter(e => e !== ""));
+  const select = document.getElementById("escuelaSelect");
+  select.innerHTML = '<option value="">Todas las Escuelas</option>';
+  escuelas.forEach(escuela => {
+    const opt = document.createElement("option");
+    opt.value = escuela;
+    opt.textContent = escuela;
+    select.appendChild(opt);
+  });
+}
+
 async function analizarDatos() {
   const salida = [];
+  const escuelaFiltrada = document.getElementById("escuelaSelect").value;
 
   try {
     const res = await fetch(SUPABASE_URL, {
-      headers: {
-        "apikey": SUPABASE_KEY,
-        "Authorization": `Bearer ${SUPABASE_KEY}`
-      }
+      headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` }
     });
-
-    const data = await res.json();
-    if (!data || data.length === 0) throw new Error("No hay datos");
+    const dataAll = await res.json();
+    const data = escuelaFiltrada ? dataAll.filter(d => d.escuela === escuelaFiltrada) : dataAll;
+    if (!data || data.length === 0) throw new Error("No hay datos para analizar");
 
     for (const row of data) {
       row.tiempo_jugado_seg = tiempoASegundos(row.tiempo_jugado || "");
       row.rol_dominante = rolDominante(row);
       row.perfil_fuzzy = evaluarFuzzy(row.tiempo_jugado_seg, row.tiempo_decision);
       row.clasificacion = clasificacionFuzzy(row.perfil_fuzzy);
-      row.total_decisiones = (
-        (row.decisiones_acosador || 0) +
-        (row.decisiones_victima || 0) +
-        (row.decisiones_observador_activo || 0) +
-        (row.decisiones_observador_pasivo || 0)
-      );
+      row.total_decisiones = (row.decisiones_acosador || 0) + (row.decisiones_victima || 0) + (row.decisiones_observador_activo || 0) + (row.decisiones_observador_pasivo || 0);
     }
 
-    salida.push("--- ANÁLISIS GENERAL DEL GRUPO ---\n");
+    salida.push(`--- ANÁLISIS ${escuelaFiltrada ? 'DE ' + escuelaFiltrada : 'GENERAL DEL GRUPO'} ---\n`);
     salida.push(`Total de jugadores: ${data.length}`);
 
-    // Género
     const totalMasculino = data.filter(r => (r.genero || "").toLowerCase() === "masculino").length;
     const totalFemenino = data.filter(r => (r.genero || "").toLowerCase() === "femenino").length;
     salida.push(`- Jugadores masculinos: ${totalMasculino}`);
     salida.push(`- Jugadoras femeninas: ${totalFemenino}`);
 
-    // Decisiones
     const suma = campo => data.reduce((acc, r) => acc + (r[campo] || 0), 0);
     const decisiones_totales = {
       'Acosador': suma('decisiones_acosador'),
@@ -79,41 +86,13 @@ async function analizarDatos() {
       'Observador Pasivo': suma('decisiones_observador_pasivo')
     };
     const rolMasFrecuente = Object.keys(decisiones_totales).reduce((a, b) => decisiones_totales[a] > decisiones_totales[b] ? a : b);
+
     salida.push("\nDecisiones por rol:");
     for (const [rol, total] of Object.entries(decisiones_totales)) {
       salida.push(`  ${rol}: ${total}`);
     }
     salida.push(`Rol más frecuente: ${rolMasFrecuente}`);
 
-    // Gráfica
-    const ctx = document.getElementById("graficaRoles").getContext("2d");
-    if (window.grafica) window.grafica.destroy();
-    window.grafica = new Chart(ctx, {
-      type: "bar",
-      data: {
-        labels: Object.keys(decisiones_totales),
-        datasets: [{
-          label: "Total de Decisiones por Rol",
-          data: Object.values(decisiones_totales),
-          backgroundColor: [
-            "rgba(255, 99, 132, 0.5)",
-            "rgba(54, 162, 235, 0.5)",
-            "rgba(255, 206, 86, 0.5)",
-            "rgba(75, 192, 192, 0.5)"
-          ],
-          borderColor: [
-            "rgba(255, 99, 132, 1)",
-            "rgba(54, 162, 235, 1)",
-            "rgba(255, 206, 86, 1)",
-            "rgba(75, 192, 192, 1)"
-          ],
-          borderWidth: 1
-        }]
-      },
-      options: { responsive: true, scales: { y: { beginAtZero: true } } }
-    });
-
-    // Finales
     const finales = {};
     for (const r of data) {
       if (!r.final_obtenido) continue;
@@ -126,10 +105,9 @@ async function analizarDatos() {
     }
     salida.push(`Final más frecuente: ${finalMasComun}`);
 
-    // Promedios y clasificaciones
     const promedio = (campo) => data.reduce((a, b) => a + (b[campo] || 0), 0) / data.length;
-    salida.push(`\nTiempo promedio jugado: ${promedio('tiempo_jugado_seg').toFixed(2)} segundos`);
-    salida.push(`Tiempo promedio de decisión: ${promedio('tiempo_decision').toFixed(2)} segundos`);
+    salida.push(`\nTiempo promedio jugado: ${promedio('tiempo_jugado_seg').toFixed(2)} seg`);
+    salida.push(`Tiempo promedio de decisión: ${promedio('tiempo_decision').toFixed(2)} seg`);
 
     const clasificaciones = {};
     for (const r of data) {
@@ -142,7 +120,6 @@ async function analizarDatos() {
     }
     salida.push(`Perfil dominante: ${perfilDominante}`);
 
-    // Correlación
     const avgX = promedio("tiempo_jugado_seg");
     const avgY = promedio("total_decisiones");
     const numerador = data.reduce((sum, r) => sum + ((r.tiempo_jugado_seg - avgX) * (r.total_decisiones - avgY)), 0);
@@ -151,8 +128,7 @@ async function analizarDatos() {
     const correlacion = numerador / (denomX * denomY);
     salida.push(`\nCorrelación entre tiempo jugado y decisiones tomadas: ${correlacion.toFixed(2)}`);
 
-    // Conclusiones generales y de género
-    salida.push("\n--- CONCLUSIÓN GENERAL DEL GRUPO ---\n");
+    salida.push("\n--- CONCLUSIONES ---");
     if (perfilDominante === "Reflexivo") {
       salida.push("El grupo mostró una tendencia reflexiva, indicando que los jugadores se tomaron el tiempo para pensar sus decisiones.");
     } else if (perfilDominante === "Equilibrado") {
@@ -187,8 +163,6 @@ async function analizarDatos() {
       salida.push(`El final más frecuente fue '${finalMasComun}', lo cual puede ser un punto interesante para rediseñar ramas narrativas.`);
     }
 
-    // Conclusiones de género
-    salida.push("\n--- CONCLUSIÓN POR GÉNERO ---");
     if (totalMasculino > totalFemenino) {
       salida.push("La mayoría de los jugadores fueron masculinos, lo cual pudo influir en la forma en que tomaron decisiones y eligieron finales.");
     } else if (totalFemenino > totalMasculino) {
@@ -203,4 +177,7 @@ async function analizarDatos() {
   }
 }
 
-window.mostrarAnalisis = analizarDatos;
+window.mostrarAnalisis = () => {
+  cargarEscuelas();
+  analizarDatos();
+};
