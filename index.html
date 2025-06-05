@@ -52,10 +52,6 @@
       font-size: 1rem;
       color: #111;
     }
-
-    .grafica-container {
-      margin-top: 2rem;
-    }
   </style>
 </head>
 
@@ -67,51 +63,66 @@
 
     <h1>Dashboard de Jugadores</h1>
 
-    <!-- Botón para exportar CSV -->
-    <div class="d-flex justify-content-end mb-3">
-      <button onclick="exportarCSV()" class="btn btn-success">
-        Descargar CSV
-      </button>
-    </div>
+    <!-- Pestañas -->
+    <ul class="nav nav-tabs" id="dashboardTabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="tabla-tab" data-bs-toggle="tab" data-bs-target="#tabla" type="button" role="tab">Tabla de Jugadores</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="analisis-tab" data-bs-toggle="tab" data-bs-target="#analisis" type="button" role="tab">Análisis y Gráficas</button>
+      </li>
+    </ul>
 
-    <!-- Tabla de jugadores -->
-    <table class="table table-bordered table-hover">
-      <thead class="table-dark">
-        <tr>
-          <th>Nombre</th>
-          <th>Tiempo_jugado</th>
-          <th>Acosador</th>
-          <th>Víctima</th>
-          <th>Obs. Pasivo</th>
-          <th>Obs. Activo</th>
-          <th>Final</th>
-          <th>Tiempo Decisión</th>
-          <th>Decisiones</th>
-          <th>Acción</th>
-        </tr>
-      </thead>
-      <tbody id="tabla-jugadores"></tbody>
-    </table>
+    <!-- Contenido de las pestañas -->
+    <div class="tab-content mt-4">
+      <!-- TABLA DE JUGADORES -->
+      <div class="tab-pane fade show active" id="tabla" role="tabpanel">
+        <!-- Botón para exportar CSV -->
+        <div class="d-flex justify-content-end mb-3">
+          <button onclick="exportarCSV()" class="btn btn-success">
+            Descargar CSV
+          </button>
+        </div>
 
-    <!-- Análisis del grupo -->
-    <div class="mt-5">
-      <h3 class="mb-3">🔍 Análisis General del Grupo</h3>
-      <button class="btn btn-success mb-3" onclick="mostrarAnalisis()">Ver análisis completo</button>
-      <pre id="resultado">Cargando análisis...</pre>
-
-      <!-- Gráfica general por rol -->
-      <div class="grafica-container">
-        <h5>Gráfica de decisiones por rol</h5>
-        <canvas id="graficaRoles" width="400" height="200"></canvas>
+        <!-- Tabla de jugadores -->
+        <table class="table table-bordered table-hover">
+          <thead class="table-dark">
+            <tr>
+              <th>Nombre</th>
+              <th>Tiempo_jugado</th>
+              <th>Acosador</th>
+              <th>Víctima</th>
+              <th>Obs. Pasivo</th>
+              <th>Obs. Activo</th>
+              <th>Final</th>
+              <th>Tiempo Decisión</th>
+              <th>Decisiones</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-jugadores"></tbody>
+        </table>
       </div>
 
-      <!-- Gráfica por género -->
-      <div class="grafica-container">
-        <h5>Gráfica por género y rol</h5>
+      <!-- ANÁLISIS Y GRÁFICAS -->
+      <div class="tab-pane fade" id="analisis" role="tabpanel">
+        <h3 class="mb-3">🔍 Análisis General del Grupo</h3>
+        <button class="btn btn-success mb-3" onclick="mostrarAnalisis()">Ver análisis completo</button>
+        <pre id="resultado">Cargando análisis...</pre>
+
+        <!-- Gráfica de decisiones totales -->
+        <h4 class="mt-4">📊 Decisiones Totales por Rol</h4>
+        <canvas id="graficaRoles" width="400" height="200"></canvas>
+
+        <!-- Gráfica de decisiones por género -->
+        <h4 class="mt-4">📊 Decisiones por Género</h4>
         <canvas id="graficaGenero" width="400" height="200"></canvas>
       </div>
     </div>
   </div>
+
+  <!-- Bootstrap Bundle (con Popper.js para tabs) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
   <!-- Script de la tabla -->
   <script src="script.js"></script>
