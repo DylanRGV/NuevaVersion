@@ -176,7 +176,7 @@ window.graficaGenero = new Chart(ctxGenero, {
 });
 
 
-    // --- SIGUE TU CÓDIGO ---
+    
     const finales = {};
     for (const r of data) {
       if (!r.final_obtenido) continue;
