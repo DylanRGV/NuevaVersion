@@ -36,6 +36,7 @@ function evaluarFuzzy(tj, td) {
 
 async function analizarDatos() {
   const salida = [];
+  const escuelaSeleccionada = document.getElementById("escuelaSelect").value;
 
   try {
     const res = await fetch(SUPABASE_URL, {
@@ -48,23 +49,27 @@ async function analizarDatos() {
     const data = await res.json();
     if (!data || data.length === 0) throw new Error("No hay datos");
 
-    for (const row of data) {
+    // Filtrar por escuela si se ha seleccionado una
+    const dataFiltrada = escuelaSeleccionada
+      ? data.filter(r => r.escuela && r.escuela.toLowerCase().includes(escuelaSeleccionada.toLowerCase()))
+      : data;
+
+    for (const row of dataFiltrada) {
       row.tiempo_jugado_seg = tiempoASegundos(row.tiempo_jugado || "");
       row.rol_dominante = rolDominante(row);
       row.perfil_fuzzy = evaluarFuzzy(row.tiempo_jugado_seg, row.tiempo_decision);
       row.clasificacion = clasificacionFuzzy(row.perfil_fuzzy);
-      row.total_decisiones = (
+      row.total_decisiones =
         (row.decisiones_acosador || 0) +
         (row.decisiones_victima || 0) +
         (row.decisiones_observador_activo || 0) +
-        (row.decisiones_observador_pasivo || 0)
-      );
+        (row.decisiones_observador_pasivo || 0);
     }
 
-    salida.push("--- ANÁLISIS GENERAL DEL GRUPO ---\n");
-    salida.push(`Total de jugadores: ${data.length}`);
+    salida.push(`--- ANÁLISIS DE ${escuelaSeleccionada || "Todas las Escuelas"} ---\n`);
+    salida.push(`Total de jugadores: ${dataFiltrada.length}`);
 
-    const suma = campo => data.reduce((acc, r) => acc + (r[campo] || 0), 0);
+    const suma = campo => dataFiltrada.reduce((acc, r) => acc + (r[campo] || 0), 0);
     const decisiones_totales = {
       'Acosador': suma('decisiones_acosador'),
       'Víctima': suma('decisiones_victima'),
@@ -79,159 +84,103 @@ async function analizarDatos() {
     }
     salida.push(`Rol más frecuente: ${rolMasFrecuente}`);
 
-    const ctx = document.getElementById("graficaRoles").getContext("2d");
-    if (window.grafica) window.grafica.destroy();
-    window.grafica = new Chart(ctx, {
-      type: "bar",
-      data: {
-        labels: Object.keys(decisiones_totales),
-        datasets: [{
-          label: "Total de Decisiones por Rol",
-          data: Object.values(decisiones_totales),
-          backgroundColor: [
-            "rgba(255, 99, 132, 0.5)",
-            "rgba(54, 162, 235, 0.5)",
-            "rgba(255, 206, 86, 0.5)",
-            "rgba(75, 192, 192, 0.5)"
-          ],
-          borderColor: [
-            "rgba(255, 99, 132, 1)",
-            "rgba(54, 162, 235, 1)",
-            "rgba(255, 206, 86, 1)",
-            "rgba(75, 192, 192, 1)"
-          ],
-          borderWidth: 1
-        }]
-      },
-      options: {
-        responsive: true,
-        scales: { y: { beginAtZero: true } }
-      }
-    });
+    // --- Gráfica: Decisiones Totales por Rol ---
+    const ctxRoles = document.getElementById("graficaRoles")?.getContext("2d");
+    if (ctxRoles) {
+      if (window.graficaRoles && typeof window.graficaRoles.destroy === "function") window.graficaRoles.destroy();
+      window.graficaRoles = new Chart(ctxRoles, {
+        type: "bar",
+        data: {
+          labels: Object.keys(decisiones_totales),
+          datasets: [{
+            label: "Total de Decisiones por Rol",
+            data: Object.values(decisiones_totales),
+            backgroundColor: ["rgba(255, 99, 132, 0.5)", "rgba(54, 162, 235, 0.5)", "rgba(255, 206, 86, 0.5)", "rgba(75, 192, 192, 0.5)"],
+            borderColor: ["rgba(255, 99, 132, 1)", "rgba(54, 162, 235, 1)", "rgba(255, 206, 86, 1)", "rgba(75, 192, 192, 1)"],
+            borderWidth: 1
+          }]
+        },
+        options: { responsive: true, scales: { y: { beginAtZero: true } } }
+      });
+    }
 
+    // --- Gráfica: Decisiones por Género ---
+    const decisionesGenero = { masculino: [0, 0, 0, 0], femenino: [0, 0, 0, 0] };
+    for (const r of dataFiltrada) {
+      const genero = (r.genero || "").toLowerCase();
+      if (genero === "masculino" || genero === "femenino") {
+        decisionesGenero[genero][0] += r.decisiones_acosador || 0;
+        decisionesGenero[genero][1] += r.decisiones_victima || 0;
+        decisionesGenero[genero][2] += r.decisiones_observador_activo || 0;
+        decisionesGenero[genero][3] += r.decisiones_observador_pasivo || 0;
+      }
+    }
+    const ctxGenero = document.getElementById("graficaGenero")?.getContext("2d");
+    if (ctxGenero) {
+      if (window.graficaGenero && typeof window.graficaGenero.destroy === "function") window.graficaGenero.destroy();
+      window.graficaGenero = new Chart(ctxGenero, {
+        type: "bar",
+        data: {
+          labels: ["Acosador", "Víctima", "Observador Activo", "Observador Pasivo"],
+          datasets: [
+            { label: "Masculino", data: decisionesGenero.masculino, backgroundColor: "rgba(0, 0, 139, 0.5)", borderColor: "rgba(0, 0, 139, 1)", borderWidth: 1 },
+            { label: "Femenino", data: decisionesGenero.femenino, backgroundColor: "rgba(255, 105, 180, 0.5)", borderColor: "rgba(255, 105, 180, 1)", borderWidth: 1 }
+          ]
+        },
+        options: { responsive: true, scales: { y: { beginAtZero: true } } }
+      });
+    }
+
+    // --- Conclusiones ---
     const finales = {};
-    for (const r of data) {
+    for (const r of dataFiltrada) {
       if (!r.final_obtenido) continue;
       finales[r.final_obtenido] = (finales[r.final_obtenido] || 0) + 1;
     }
     const finalMasComun = Object.keys(finales).reduce((a, b) => finales[a] > finales[b] ? a : b);
-
     salida.push("\nFinales más comunes:");
-    for (const [f, c] of Object.entries(finales)) {
-      salida.push(`  ${f}: ${c}`);
-    }
+    for (const [f, c] of Object.entries(finales)) salida.push(`  ${f}: ${c}`);
     salida.push(`Final más frecuente: ${finalMasComun}`);
 
-    const promedio = (campo) => data.reduce((a, b) => a + (b[campo] || 0), 0) / data.length;
+    const promedio = campo => dataFiltrada.reduce((a, b) => a + (b[campo] || 0), 0) / dataFiltrada.length;
     salida.push(`\nTiempo promedio jugado: ${promedio('tiempo_jugado_seg').toFixed(2)} segundos`);
     salida.push(`Tiempo promedio de decisión: ${promedio('tiempo_decision').toFixed(2)} segundos`);
 
     const clasificaciones = {};
-    for (const r of data) {
-      clasificaciones[r.clasificacion] = (clasificaciones[r.clasificacion] || 0) + 1;
-    }
+    for (const r of dataFiltrada) clasificaciones[r.clasificacion] = (clasificaciones[r.clasificacion] || 0) + 1;
     const perfilDominante = Object.keys(clasificaciones).reduce((a, b) => clasificaciones[a] > clasificaciones[b] ? a : b);
-
     salida.push("\nDistribución de perfiles fuzzy:");
-    for (const [k, v] of Object.entries(clasificaciones)) {
-      salida.push(`  ${k}: ${v}`);
-    }
+    for (const [k, v] of Object.entries(clasificaciones)) salida.push(`  ${k}: ${v}`);
     salida.push(`Perfil dominante: ${perfilDominante}`);
 
-    // 🔵 AGREGADO: Distribución de perfiles fuzzy por género
-    const fuzzyGenero = {
-      masculino: { Impulsivo: 0, Equilibrado: 0, Reflexivo: 0 },
-      femenino: { Impulsivo: 0, Equilibrado: 0, Reflexivo: 0 }
-    };
-    for (const r of data) {
-      const genero = (r.genero || "").toLowerCase();
-      if (genero === "masculino" && fuzzyGenero.masculino.hasOwnProperty(r.clasificacion)) {
-        fuzzyGenero.masculino[r.clasificacion]++;
-      } else if (genero === "femenino" && fuzzyGenero.femenino.hasOwnProperty(r.clasificacion)) {
-        fuzzyGenero.femenino[r.clasificacion]++;
-      }
-    }
-    salida.push("\nDistribución de perfiles fuzzy por género:");
-    for (const genero of ["masculino", "femenino"]) {
-      salida.push(`  ${genero}:`);
-      for (const [perfil, count] of Object.entries(fuzzyGenero[genero])) {
-        salida.push(`    ${perfil}: ${count}`);
-      }
-    }
+    // Conclusiones adicionales (idénticas a antes)
+    salida.push("\n--- CONCLUSIÓN GENERAL DEL GRUPO ---\n");
+    salida.push(perfilDominante === "Reflexivo"
+      ? "El grupo mostró una tendencia reflexiva, indicando que los jugadores se tomaron el tiempo para pensar sus decisiones."
+      : perfilDominante === "Equilibrado"
+      ? "El grupo tiene un comportamiento equilibrado, con una toma de decisiones moderada tanto en rapidez como en análisis."
+      : "La mayoría de los jugadores actuaron de forma impulsiva, eligiendo rápidamente sin tanto análisis previo.");
 
-    // 🔵 AGREGADO: Gráfica de perfiles fuzzy por género
-    const ctxFuzzyGenero = document.getElementById("graficaFuzzyGenero").getContext("2d");
-    if (window.graficaFuzzyGenero) window.graficaFuzzyGenero.destroy();
-    window.graficaFuzzyGenero = new Chart(ctxFuzzyGenero, {
-      type: "bar",
-      data: {
-        labels: ["Impulsivo", "Equilibrado", "Reflexivo"],
-        datasets: [
-          {
-            label: "Masculino",
-            data: [
-              fuzzyGenero.masculino.Impulsivo,
-              fuzzyGenero.masculino.Equilibrado,
-              fuzzyGenero.masculino.Reflexivo
-            ],
-            backgroundColor: "rgba(0, 0, 139, 0.5)",
-            borderColor: "rgba(0, 0, 139, 1)",
-            borderWidth: 1
-          },
-          {
-            label: "Femenino",
-            data: [
-              fuzzyGenero.femenino.Impulsivo,
-              fuzzyGenero.femenino.Equilibrado,
-              fuzzyGenero.femenino.Reflexivo
-            ],
-            backgroundColor: "rgba(255, 105, 180, 0.5)",
-            borderColor: "rgba(255, 105, 180, 1)",
-            borderWidth: 1
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        scales: { y: { beginAtZero: true } }
-      }
-    });
+    salida.push(rolMasFrecuente === "Víctima"
+      ? "El rol más adoptado fue el de víctima, lo que podría reflejar una fuerte identificación emocional con el conflicto."
+      : rolMasFrecuente === "Acosador"
+      ? "El rol más adoptado fue el de acosador. Esto puede indicar interés en explorar consecuencias narrativas de ese camino."
+      : `El rol más adoptado fue el de ${rolMasFrecuente.toLowerCase()}, lo que sugiere una preferencia por observar más que intervenir directamente.`);
 
     const avgX = promedio("tiempo_jugado_seg");
     const avgY = promedio("total_decisiones");
-    const numerador = data.reduce((sum, r) => sum + ((r.tiempo_jugado_seg - avgX) * (r.total_decisiones - avgY)), 0);
-    const denomX = Math.sqrt(data.reduce((sum, r) => sum + ((r.tiempo_jugado_seg - avgX) ** 2), 0));
-    const denomY = Math.sqrt(data.reduce((sum, r) => sum + ((r.total_decisiones - avgY) ** 2), 0));
+    const numerador = dataFiltrada.reduce((sum, r) => sum + ((r.tiempo_jugado_seg - avgX) * (r.total_decisiones - avgY)), 0);
+    const denomX = Math.sqrt(dataFiltrada.reduce((sum, r) => sum + ((r.tiempo_jugado_seg - avgX) ** 2), 0));
+    const denomY = Math.sqrt(dataFiltrada.reduce((sum, r) => sum + ((r.total_decisiones - avgY) ** 2), 0));
     const correlacion = numerador / (denomX * denomY);
-    salida.push(`\nCorrelación entre tiempo jugado y decisiones tomadas: ${correlacion.toFixed(2)}`);
 
-    salida.push("\n--- CONCLUSIÓN GENERAL DEL GRUPO ---\n");
-
-    if (perfilDominante === "Reflexivo") {
-      salida.push("El grupo mostró una tendencia reflexiva, indicando que los jugadores se tomaron el tiempo para pensar sus decisiones.");
-    } else if (perfilDominante === "Equilibrado") {
-      salida.push("El grupo tiene un comportamiento equilibrado, con una toma de decisiones moderada tanto en rapidez como en análisis.");
-    } else {
-      salida.push("La mayoría de los jugadores actuaron de forma impulsiva, eligiendo rápidamente sin tanto análisis previo.");
-    }
-
-    if (rolMasFrecuente === "Víctima") {
-      salida.push("El rol más adoptado fue el de víctima, lo que podría reflejar una fuerte identificación emocional con el conflicto.");
-    } else if (rolMasFrecuente === "Acosador") {
-      salida.push("El rol más adoptado fue el de acosador. Esto puede indicar interés en explorar consecuencias narrativas de ese camino.");
-    } else {
-      salida.push(`El rol más adoptado fue el de ${rolMasFrecuente.toLowerCase()}, lo que sugiere una preferencia por observar más que intervenir directamente.`);
-    }
-
-    if (correlacion > 0.3) {
-      salida.push("Existe una correlación fuerte entre tiempo jugado y cantidad de decisiones, lo que sugiere compromiso narrativo.");
-    } else if (correlacion > 0.1) {
-      salida.push("Hay una correlación leve positiva entre tiempo jugado y decisiones tomadas.");
-    } else if (correlacion < -0.3) {
-      salida.push("Curiosamente, cuanto más tiempo jugaban, menos decisiones tomaban. Esto podría indicar confusión o indecisión.");
-    } else {
-      salida.push("No se detectó una correlación significativa entre tiempo de juego y número de decisiones.");
-    }
+    salida.push(correlacion > 0.3
+      ? "Existe una correlación fuerte entre tiempo jugado y cantidad de decisiones, lo que sugiere compromiso narrativo."
+      : correlacion > 0.1
+      ? "Hay una correlación leve positiva entre tiempo jugado y decisiones tomadas."
+      : correlacion < -0.3
+      ? "Curiosamente, cuanto más tiempo jugaban, menos decisiones tomaban. Esto podría indicar confusión o indecisión."
+      : "No se detectó una correlación significativa entre tiempo de juego y número de decisiones.");
 
     if (finalMasComun.includes("Videojuegos")) {
       salida.push("El final más elegido fue 'Videojuegos', indicando una tendencia hacia el aislamiento o búsqueda de escape.");
@@ -241,10 +190,15 @@ async function analizarDatos() {
       salida.push(`El final más frecuente fue '${finalMasComun}', lo cual puede ser un punto interesante para rediseñar ramas narrativas.`);
     }
 
+    // Mostrar resultados
     document.getElementById("resultado").innerText = salida.join("\n");
   } catch (err) {
     document.getElementById("resultado").innerText = `❌ Error: ${err.message}`;
   }
 }
 
+// Se actualiza automáticamente al cambiar la escuela
 window.mostrarAnalisis = analizarDatos;
+window.addEventListener("DOMContentLoaded", () => {
+  mostrarAnalisis();
+});
