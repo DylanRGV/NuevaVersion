@@ -72,6 +72,7 @@ async function analizarDatos() {
 
     salida.push(`--- ANÁLISIS ${escuelaFiltrada ? 'DE ' + escuelaFiltrada : 'GENERAL DEL GRUPO'} ---\n`);
     salida.push(`Total de jugadores: ${data.length}`);
+
     const totalMasculino = data.filter(r => (r.genero || "").toLowerCase() === "masculino").length;
     const totalFemenino = data.filter(r => (r.genero || "").toLowerCase() === "femenino").length;
     salida.push(`- Jugadores masculinos: ${totalMasculino}`);
@@ -92,68 +93,43 @@ async function analizarDatos() {
     }
     salida.push(`Rol más frecuente: ${rolMasFrecuente}`);
 
-    // Gráfica general
-    const ctx = document.getElementById("graficaRoles").getContext("2d");
-    if (window.grafica) window.grafica.destroy();
-    window.grafica = new Chart(ctx, {
-      type: "bar",
-      data: {
-        labels: Object.keys(decisiones_totales),
-        datasets: [{
-          label: "Total de Decisiones por Rol",
-          data: Object.values(decisiones_totales),
-          backgroundColor: ["#ff6384", "#36a2eb", "#ffce56", "#4bc0c0"],
-          borderWidth: 1
-        }]
-      },
-      options: { responsive: true, scales: { y: { beginAtZero: true } } }
-    });
-
-    // Gráfica género
-    const roles = ["Acosador", "Víctima", "Observador Activo", "Observador Pasivo"];
-    const decisionesGenero = { masculino: [0, 0, 0, 0], femenino: [0, 0, 0, 0] };
+    const clasificaciones = {};
     for (const r of data) {
-      const genero = (r.genero || "").toLowerCase();
-      if (genero === "masculino") {
-        decisionesGenero.masculino[0] += r.decisiones_acosador || 0;
-        decisionesGenero.masculino[1] += r.decisiones_victima || 0;
-        decisionesGenero.masculino[2] += r.decisiones_observador_activo || 0;
-        decisionesGenero.masculino[3] += r.decisiones_observador_pasivo || 0;
-      } else if (genero === "femenino") {
-        decisionesGenero.femenino[0] += r.decisiones_acosador || 0;
-        decisionesGenero.femenino[1] += r.decisiones_victima || 0;
-        decisionesGenero.femenino[2] += r.decisiones_observador_activo || 0;
-        decisionesGenero.femenino[3] += r.decisiones_observador_pasivo || 0;
-      }
+      clasificaciones[r.clasificacion] = (clasificaciones[r.clasificacion] || 0) + 1;
     }
-    const ctxGenero = document.getElementById("graficaGenero").getContext("2d");
-    if (window.graficaGenero && window.graficaGenero.destroy) window.graficaGenero.destroy();
-    window.graficaGenero = new Chart(ctxGenero, {
-      type: "bar",
-      data: {
-        labels: roles,
-        datasets: [
-          {
-            label: "Masculino",
-            data: decisionesGenero.masculino,
-            backgroundColor: "rgba(0, 0, 139, 0.5)",
-            borderColor: "rgba(0, 0, 139, 1)",
-            borderWidth: 1
-          },
-          {
-            label: "Femenino",
-            data: decisionesGenero.femenino,
-            backgroundColor: "rgba(255, 105, 180, 0.5)",
-            borderColor: "rgba(255, 105, 180, 1)",
-            borderWidth: 1
-          }
-        ]
-      },
-      options: { responsive: true, scales: { y: { beginAtZero: true } } }
-    });
+    const perfilDominante = Object.keys(clasificaciones).reduce((a, b) => clasificaciones[a] > clasificaciones[b] ? a : b);
 
-    // Conclusiones (todas)
-    salida.push("\n--- CONCLUSIÓN GENERAL DEL GRUPO ---");
+    salida.push("\nDistribución de perfiles fuzzy:");
+    for (const [k, v] of Object.entries(clasificaciones)) {
+      salida.push(`  ${k}: ${v}`);
+    }
+    salida.push(`Perfil dominante: ${perfilDominante}`);
+
+    const finales = {};
+    for (const r of data) {
+      if (!r.final_obtenido) continue;
+      finales[r.final_obtenido] = (finales[r.final_obtenido] || 0) + 1;
+    }
+    const finalMasComun = Object.keys(finales).reduce((a, b) => finales[a] > finales[b] ? a : b);
+    salida.push("\nFinales más comunes:");
+    for (const [f, c] of Object.entries(finales)) {
+      salida.push(`  ${f}: ${c}`);
+    }
+    salida.push(`Final más frecuente: ${finalMasComun}`);
+
+    const promedio = campo => data.reduce((a, b) => a + (b[campo] || 0), 0) / data.length;
+    salida.push(`\nTiempo promedio jugado: ${promedio('tiempo_jugado_seg').toFixed(2)} segundos`);
+    salida.push(`Tiempo promedio de decisión: ${promedio('tiempo_decision').toFixed(2)} segundos`);
+
+    const avgX = promedio("tiempo_jugado_seg");
+    const avgY = promedio("total_decisiones");
+    const numerador = data.reduce((sum, r) => sum + ((r.tiempo_jugado_seg - avgX) * (r.total_decisiones - avgY)), 0);
+    const denomX = Math.sqrt(data.reduce((sum, r) => sum + ((r.tiempo_jugado_seg - avgX) ** 2), 0));
+    const denomY = Math.sqrt(data.reduce((sum, r) => sum + ((r.total_decisiones - avgY) ** 2), 0));
+    const correlacion = numerador / (denomX * denomY);
+    salida.push(`\nCorrelación entre tiempo jugado y decisiones tomadas: ${correlacion.toFixed(2)}`);
+
+    salida.push("\n--- CONCLUSIONES ---");
     if (perfilDominante === "Reflexivo") {
       salida.push("El grupo mostró una tendencia reflexiva, indicando que los jugadores se tomaron el tiempo para pensar sus decisiones.");
     } else if (perfilDominante === "Equilibrado") {
@@ -169,13 +145,6 @@ async function analizarDatos() {
     } else {
       salida.push(`El rol más adoptado fue el de ${rolMasFrecuente.toLowerCase()}, lo que sugiere una preferencia por observar más que intervenir directamente.`);
     }
-
-    const avgX = data.reduce((a, b) => a + (b.tiempo_jugado_seg || 0), 0) / data.length;
-    const avgY = data.reduce((a, b) => a + (b.total_decisiones || 0), 0) / data.length;
-    const numerador = data.reduce((sum, r) => sum + ((r.tiempo_jugado_seg - avgX) * (r.total_decisiones - avgY)), 0);
-    const denomX = Math.sqrt(data.reduce((sum, r) => sum + ((r.tiempo_jugado_seg - avgX) ** 2), 0));
-    const denomY = Math.sqrt(data.reduce((sum, r) => sum + ((r.total_decisiones - avgY) ** 2), 0));
-    const correlacion = numerador / (denomX * denomY);
 
     if (correlacion > 0.3) {
       salida.push("Existe una correlación fuerte entre tiempo jugado y cantidad de decisiones, lo que sugiere compromiso narrativo.");
@@ -193,15 +162,6 @@ async function analizarDatos() {
       salida.push("El final más común fue 'Gym', lo cual podría representar intención de superación personal en la narrativa.");
     } else {
       salida.push(`El final más frecuente fue '${finalMasComun}', lo cual puede ser un punto interesante para rediseñar ramas narrativas.`);
-    }
-
-    // Conclusión extra por género
-    if (totalFemenino > totalMasculino) {
-      salida.push("La participación femenina fue mayor, lo que podría indicar interés en temas emocionales o narrativos.");
-    } else if (totalMasculino > totalFemenino) {
-      salida.push("La participación masculina fue mayor, lo que sugiere curiosidad en la toma de decisiones más activas.");
-    } else {
-      salida.push("La participación de géneros estuvo equilibrada, lo cual refleja un ambiente inclusivo y diverso.");
     }
 
     document.getElementById("resultado").innerText = salida.join("\n");
