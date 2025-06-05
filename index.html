@@ -59,20 +59,15 @@
 
     <h1>Dashboard de Jugadores</h1>
 
-    <!-- Botón para exportar CSV -->
+    <!-- Botón para exportar tabla a Excel -->
     <div class="mb-3">
-      <button onclick="exportarCSV()" class="btn btn-success">Descargar CSV</button>
-    </div>
-
-    <!-- Botón de actualización independiente -->
-    <div class="mb-3">
-      <button class="btn btn-primary mb-2" onclick="mostrarAnalisis()">🔄 Cargar análisis y actualizar datos</button>
+      <button class="btn btn-primary mb-2" onclick="exportarTablaAExcel()">📄 Exportar tabla a Excel</button>
     </div>
 
     <!-- Filtro de escuela -->
     <div class="mb-3">
       <label for="escuelaSelect" class="form-label">Filtrar por escuela:</label>
-      <select id="escuelaSelect" class="form-select" onchange="actualizarNombreEscuela()">
+      <select id="escuelaSelect" class="form-select" onchange="mostrarAnalisis()">
         <option value="">Todas las Escuelas</option>
       </select>
     </div>
@@ -93,12 +88,6 @@
     <details>
       <summary> Gráfica: Decisiones por Género - <span id="nombreEscuelaGenero">Todas las Escuelas</span></summary>
       <canvas id="graficaGenero" width="400" height="200"></canvas>
-    </details>
-
-    <!-- Gráfica: Distribución de perfiles fuzzy por género -->
-    <details>
-      <summary> Gráfica: Distribución de Perfiles Fuzzy por Género - <span id="nombreEscuelaFuzzy">Todas las Escuelas</span></summary>
-      <canvas id="graficaFuzzyGenero" width="400" height="200"></canvas>
     </details>
 
     <!-- Tabla de jugadores -->
@@ -128,11 +117,47 @@
   <!-- Bootstrap Bundle (con Popper.js para desplegables) -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-  <!-- Script de la tabla -->
-  <script src="script.js"></script>
-
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Script de la tabla y exportar a Excel -->
+  <script>
+    function exportarTablaAExcel() {
+      const tabla = document.querySelector("table");
+      let csv = [];
+      const filas = tabla.querySelectorAll("tr");
+
+      for (let i = 0; i < filas.length; i++) {
+        const celdas = filas[i].querySelectorAll("th, td");
+        let fila = [];
+        for (let j = 0; j < celdas.length; j++) {
+          let texto = celdas[j].innerText;
+          texto = texto.replace(/"/g, '""'); // Escapar comillas dobles
+          fila.push(`"${texto}"`);
+        }
+        csv.push(fila.join(","));
+      }
+
+      const csvString = csv.join("\n");
+      const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
+      const enlace = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      enlace.setAttribute("href", url);
+      enlace.setAttribute("download", "tabla_jugadores.csv");
+      enlace.style.visibility = "hidden";
+      document.body.appendChild(enlace);
+      enlace.click();
+      document.body.removeChild(enlace);
+    }
+
+    // Ejecutar el análisis automáticamente al cargar la página
+    document.addEventListener("DOMContentLoaded", function() {
+      mostrarAnalisis();
+    });
+  </script>
+
+  <!-- Script de la tabla (si lo usas en otro archivo externo) -->
+  <script src="script.js"></script>
 
   <!-- Script del análisis fuzzy -->
   <script type="module" src="./analisis.js"></script>
