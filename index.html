@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -9,7 +10,10 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 
   <!-- Bootstrap CSS -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  />
 
   <style>
     body {
@@ -17,36 +21,49 @@
       font-family: 'Segoe UI', sans-serif;
       padding: 2rem;
     }
+
     h1 {
       text-align: center;
       margin-bottom: 2rem;
     }
+
     .container {
       max-width: 1100px;
       margin: auto;
     }
-    .table th, .table td {
+
+    .table th,
+    .table td {
       vertical-align: middle;
       font-size: 14px;
       word-wrap: break-word;
       white-space: normal;
     }
+
+    .table td {
+      overflow-wrap: break-word;
+    }
+
     .table-responsive {
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
     }
+
     #logoInstitucion {
       max-height: 80px;
     }
+
     #resultado {
       background-color: #fff;
-      padding: 1rem;
+      padding: 1.5rem;
       border-radius: 10px;
       box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
       white-space: pre-wrap;
       font-family: monospace;
       font-size: 1rem;
       color: #111;
+      max-height: none;
+      overflow-y: visible;
     }
   </style>
 </head>
@@ -54,73 +71,104 @@
 <body>
   <div class="container">
     <div class="d-flex justify-content-end mb-4">
-      <img id="logoInstitucion" src="cuceilogo.png" alt="Logo Instituci贸n" />
+      <img id="logoInstitucion" src="cuceilogo.png" alt="Logo Institución" />
     </div>
 
     <h1>Dashboard de Jugadores</h1>
 
-    <!-- Bot贸n de exportaci贸n -->
-    <div class="mb-3">
-      <button class="btn btn-primary mb-2" onclick="exportarCSV()">馃搧 Exportar tabla a Excel</button>
-    </div>
+    <!-- Pestañas -->
+    <ul class="nav nav-tabs" id="dashboardTabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="tabla-tab" data-bs-toggle="tab" data-bs-target="#tabla" type="button" role="tab">Tabla de Jugadores</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="analisis-tab" data-bs-toggle="tab" data-bs-target="#analisis" type="button" role="tab">Análisis y Gráficas</button>
+      </li>
+    </ul>
 
-    <!-- Filtro de escuela -->
-    <div class="mb-3">
-      <label for="escuelaSelect" class="form-label">Filtrar por escuela:</label>
-      <select id="escuelaSelect" class="form-select" onchange="mostrarAnalisis()">
-        <option value="">Todas las Escuelas</option>
-      </select>
-    </div>
+    <div class="tab-content mt-4">
+      <!-- TABLA DE JUGADORES -->
+      <div class="tab-pane fade show active" id="tabla" role="tabpanel">
+        <div class="d-flex justify-content-end mb-3">
+          <button onclick="exportarCSV()" class="btn btn-success">
+            Descargar CSV
+          </button>
+        </div>
 
-    <!-- An谩lisis -->
-    <details open>
-      <summary> An谩lisis: <span id="nombreEscuela">Todas las Escuelas</span></summary>
-      <pre id="resultado"></pre>
-    </details>
+        <div class="table-responsive">
+          <table class="table table-bordered table-hover">
+            <thead class="table-dark">
+              <tr>
+                <th>Nombre</th>
+                <th>Tiempo_jugado</th>
+                <th>Acosador</th>
+                <th>Víctima</th>
+                <th>Obs. Pasivo</th>
+                <th>Obs. Activo</th>
+                <th>Final</th>
+                <th>Tiempo Decisión</th>
+                <th>Decisiones</th>
+                <th>Escuela</th>
+                <th>Genero</th>
+                <th>Acción</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-jugadores"></tbody>
+          </table>
+        </div>
+      </div>
 
-    <!-- Gr谩fica: Decisiones Totales por Rol -->
-    <details open id="detallesGraficaRoles">
-      <summary> Gr谩fica: Decisiones Totales por Rol - <span id="nombreEscuelaRol">Todas las Escuelas</span></summary>
-      <canvas id="graficaRoles" width="400" height="200"></canvas>
-    </details>
+      <!-- ANÁLISIS Y GRÁFICAS -->
+      <div class="tab-pane fade" id="analisis" role="tabpanel">
+        <h3 class="mb-3">Análisis General del Grupo</h3>
 
-    <!-- Gr谩fica: Decisiones por G茅nero -->
-    <details open id="detallesGraficaGenero">
-      <summary> Gr谩fica: Decisiones por G茅nero - <span id="nombreEscuelaGenero">Todas las Escuelas</span></summary>
-      <canvas id="graficaGenero" width="400" height="200"></canvas>
-    </details>
+        <div class="mb-3">
+          <label for="escuelaSelect" class="form-label">Filtrar por escuela:</label>
+          <select id="escuelaSelect" class="form-select">
+            <option value="">Todas las Escuelas</option>
+          </select>
+        </div>
 
-    <!-- Tabla de jugadores -->
-    <div class="table-responsive mt-4">
-      <table class="table table-bordered table-hover">
-        <thead class="table-dark">
-          <tr>
-            <th>Nombre</th>
-            <th>Tiempo_jugado</th>
-            <th>Acosador</th>
-            <th>V铆ctima</th>
-            <th>Obs. Pasivo</th>
-            <th>Obs. Activo</th>
-            <th>Final</th>
-            <th>Tiempo Decisi贸n</th>
-            <th>Decisiones</th>
-            <th>Escuela</th>
-            <th>Genero</th>
-            <th>Accion</th>
-          </tr>
-        </thead>
-        <tbody id="tabla-jugadores"></tbody>
-      </table>
+        <!-- ✅ BOTÓN para mostrar/ocultar solo el ANÁLISIS -->
+        <button class="btn btn-primary mb-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAnalisis" aria-expanded="false">
+          Mostrar / Ocultar Análisis
+        </button>
+        <div class="collapse" id="collapseAnalisis">
+          <pre id="resultado"></pre>
+        </div>
+
+        <!-- ✅ BOTÓN para mostrar/ocultar la GRÁFICA de DECISIONES TOTALES -->
+        <button class="btn btn-secondary mb-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseGraficaRoles" aria-expanded="false">
+          Mostrar / Ocultar Gráfica: Decisiones Totales por Rol
+        </button>
+        <div class="collapse" id="collapseGraficaRoles">
+          <h4 class="mt-4">Decisiones Totales por Rol</h4>
+          <canvas id="graficaRoles" width="400" height="200"></canvas>
+        </div>
+
+        <!-- ✅ BOTÓN para mostrar/ocultar la GRÁFICA de DECISIONES POR GÉNERO -->
+        <button class="btn btn-secondary mb-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseGraficaGenero" aria-expanded="false">
+          Mostrar / Ocultar Gráfica: Decisiones por Género
+        </button>
+        <div class="collapse" id="collapseGraficaGenero">
+          <h4 class="mt-4">Decisiones por Género</h4>
+          <canvas id="graficaGenero" width="400" height="200"></canvas>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- Bootstrap Bundle -->
+  <!-- Bootstrap Bundle (con Popper.js para tabs y collapsibles) -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   <!-- Script de la tabla -->
   <script src="script.js"></script>
-  <!-- Script del an谩lisis -->
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Script del análisis fuzzy -->
   <script type="module" src="./analisis.js"></script>
 </body>
+
 </html>
