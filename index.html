@@ -131,22 +131,28 @@
 
         <button class="btn btn-success mb-3" onclick="mostrarAnalisis()">Ver análisis completo</button>
 
-        <!-- Botón para mostrar análisis -->
-        <button class="btn btn-primary mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAnalisis" aria-expanded="false">
+        <!-- ✅ BOTÓN para mostrar/ocultar solo el ANÁLISIS -->
+        <button class="btn btn-primary mb-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAnalisis" aria-expanded="false">
           Mostrar / Ocultar Análisis
         </button>
         <div class="collapse" id="collapseAnalisis">
           <pre id="resultado"></pre>
         </div>
 
-        <!-- Botón para mostrar gráficas -->
-        <button class="btn btn-secondary mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapseGraficas" aria-expanded="false">
-          Mostrar / Ocultar Gráficas
+        <!-- ✅ BOTÓN para mostrar/ocultar la GRÁFICA de DECISIONES TOTALES -->
+        <button class="btn btn-secondary mb-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseGraficaRoles" aria-expanded="false">
+          Mostrar / Ocultar Gráfica: Decisiones Totales por Rol
         </button>
-        <div class="collapse" id="collapseGraficas">
+        <div class="collapse" id="collapseGraficaRoles">
           <h4 class="mt-4">Decisiones Totales por Rol</h4>
           <canvas id="graficaRoles" width="400" height="200"></canvas>
+        </div>
 
+        <!-- ✅ BOTÓN para mostrar/ocultar la GRÁFICA de DECISIONES POR GÉNERO -->
+        <button class="btn btn-secondary mb-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseGraficaGenero" aria-expanded="false">
+          Mostrar / Ocultar Gráfica: Decisiones por Género
+        </button>
+        <div class="collapse" id="collapseGraficaGenero">
           <h4 class="mt-4">Decisiones por Género</h4>
           <canvas id="graficaGenero" width="400" height="200"></canvas>
         </div>
