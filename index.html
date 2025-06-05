@@ -52,6 +52,10 @@
       font-size: 1rem;
       color: #111;
     }
+
+    .grafica-container {
+      margin-top: 2rem;
+    }
   </style>
 </head>
 
@@ -83,8 +87,6 @@
           <th>Final</th>
           <th>Tiempo Decisión</th>
           <th>Decisiones</th>
-          <th>Escuela</th>
-          <th>Genero</th>
           <th>Acción</th>
         </tr>
       </thead>
@@ -96,7 +98,18 @@
       <h3 class="mb-3">🔍 Análisis General del Grupo</h3>
       <button class="btn btn-success mb-3" onclick="mostrarAnalisis()">Ver análisis completo</button>
       <pre id="resultado">Cargando análisis...</pre>
-      <canvas id="graficaRoles" width="400" height="200"></canvas>
+
+      <!-- Gráfica general por rol -->
+      <div class="grafica-container">
+        <h5>Gráfica de decisiones por rol</h5>
+        <canvas id="graficaRoles" width="400" height="200"></canvas>
+      </div>
+
+      <!-- Gráfica por género -->
+      <div class="grafica-container">
+        <h5>Gráfica por género y rol</h5>
+        <canvas id="graficaGenero" width="400" height="200"></canvas>
+      </div>
     </div>
   </div>
 
