@@ -34,49 +34,35 @@ function evaluarFuzzy(tj, td) {
   return 50;
 }
 
-async function cargarEscuelas() {
-  const res = await fetch(SUPABASE_URL, {
-    headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` }
-  });
-  const data = await res.json();
-  const escuelas = new Set(data.map(r => r.escuela || "").filter(e => e !== ""));
-  const select = document.getElementById("escuelaSelect");
-  select.innerHTML = '<option value="">Todas las Escuelas</option>';
-  escuelas.forEach(escuela => {
-    const opt = document.createElement("option");
-    opt.value = escuela;
-    opt.textContent = escuela;
-    select.appendChild(opt);
-  });
-}
-
 async function analizarDatos() {
   const salida = [];
-  const escuelaFiltrada = document.getElementById("escuelaSelect").value;
 
   try {
     const res = await fetch(SUPABASE_URL, {
-      headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` }
+      headers: {
+        "apikey": SUPABASE_KEY,
+        "Authorization": `Bearer ${SUPABASE_KEY}`
+      }
     });
-    const dataAll = await res.json();
-    const data = escuelaFiltrada ? dataAll.filter(d => d.escuela === escuelaFiltrada) : dataAll;
-    if (!data || data.length === 0) throw new Error("No hay datos para analizar");
+
+    const data = await res.json();
+    if (!data || data.length === 0) throw new Error("No hay datos");
 
     for (const row of data) {
       row.tiempo_jugado_seg = tiempoASegundos(row.tiempo_jugado || "");
       row.rol_dominante = rolDominante(row);
       row.perfil_fuzzy = evaluarFuzzy(row.tiempo_jugado_seg, row.tiempo_decision);
       row.clasificacion = clasificacionFuzzy(row.perfil_fuzzy);
-      row.total_decisiones = (row.decisiones_acosador || 0) + (row.decisiones_victima || 0) + (row.decisiones_observador_activo || 0) + (row.decisiones_observador_pasivo || 0);
+      row.total_decisiones = (
+        (row.decisiones_acosador || 0) +
+        (row.decisiones_victima || 0) +
+        (row.decisiones_observador_activo || 0) +
+        (row.decisiones_observador_pasivo || 0)
+      );
     }
 
-    salida.push(`--- ANÁLISIS ${escuelaFiltrada ? 'DE ' + escuelaFiltrada : 'GENERAL DEL GRUPO'} ---\n`);
+    salida.push("--- ANÁLISIS GENERAL DEL GRUPO ---\n");
     salida.push(`Total de jugadores: ${data.length}`);
-
-    const totalMasculino = data.filter(r => (r.genero || "").toLowerCase() === "masculino").length;
-    const totalFemenino = data.filter(r => (r.genero || "").toLowerCase() === "femenino").length;
-    salida.push(`- Jugadores masculinos: ${totalMasculino}`);
-    salida.push(`- Jugadoras femeninas: ${totalFemenino}`);
 
     const suma = campo => data.reduce((acc, r) => acc + (r[campo] || 0), 0);
     const decisiones_totales = {
@@ -93,7 +79,6 @@ async function analizarDatos() {
     }
     salida.push(`Rol más frecuente: ${rolMasFrecuente}`);
 
-    // Gráfica general de decisiones por rol
     const ctx = document.getElementById("graficaRoles").getContext("2d");
     if (window.grafica) window.grafica.destroy();
     window.grafica = new Chart(ctx, {
@@ -103,92 +88,26 @@ async function analizarDatos() {
         datasets: [{
           label: "Total de Decisiones por Rol",
           data: Object.values(decisiones_totales),
-          backgroundColor: ["#ff6384", "#36a2eb", "#ffce56", "#4bc0c0"],
+          backgroundColor: [
+            "rgba(255, 99, 132, 0.5)",
+            "rgba(54, 162, 235, 0.5)",
+            "rgba(255, 206, 86, 0.5)",
+            "rgba(75, 192, 192, 0.5)"
+          ],
+          borderColor: [
+            "rgba(255, 99, 132, 1)",
+            "rgba(54, 162, 235, 1)",
+            "rgba(255, 206, 86, 1)",
+            "rgba(75, 192, 192, 1)"
+          ],
           borderWidth: 1
         }]
       },
-      options: { responsive: true, scales: { y: { beginAtZero: true } } }
-    });
-
-    // Gráfica de decisiones por género
-    const roles = ["Acosador", "Víctima", "Observador Activo", "Observador Pasivo"];
-    const decisionesGenero = { masculino: [0, 0, 0, 0], femenino: [0, 0, 0, 0] };
-    for (const r of data) {
-      const genero = (r.genero || "").toLowerCase();
-      if (genero === "masculino") {
-        decisionesGenero.masculino[0] += r.decisiones_acosador || 0;
-        decisionesGenero.masculino[1] += r.decisiones_victima || 0;
-        decisionesGenero.masculino[2] += r.decisiones_observador_activo || 0;
-        decisionesGenero.masculino[3] += r.decisiones_observador_pasivo || 0;
-      } else if (genero === "femenino") {
-        decisionesGenero.femenino[0] += r.decisiones_acosador || 0;
-        decisionesGenero.femenino[1] += r.decisiones_victima || 0;
-        decisionesGenero.femenino[2] += r.decisiones_observador_activo || 0;
-        decisionesGenero.femenino[3] += r.decisiones_observador_pasivo || 0;
+      options: {
+        responsive: true,
+        scales: { y: { beginAtZero: true } }
       }
-    }
-    const ctxGenero = document.getElementById("graficaGenero").getContext("2d");
-    if (window.graficaGenero) window.graficaGenero.destroy();
-    window.graficaGenero = new Chart(ctxGenero, {
-      type: "bar",
-      data: {
-        labels: roles,
-        datasets: [
-          {
-            label: "Masculino",
-            data: decisionesGenero.masculino,
-            backgroundColor: "rgba(0, 0, 139, 0.5)",
-            borderColor: "rgba(0, 0, 139, 1)",
-            borderWidth: 1
-          },
-          {
-            label: "Femenino",
-            data: decisionesGenero.femenino,
-            backgroundColor: "rgba(255, 105, 180, 0.5)",
-            borderColor: "rgba(255, 105, 180, 1)",
-            borderWidth: 1
-          }
-        ]
-      },
-      options: { responsive: true, scales: { y: { beginAtZero: true } } }
     });
-
-    // Gráfica de distribución de perfiles fuzzy
-    const clasificaciones = {};
-    for (const r of data) {
-      clasificaciones[r.clasificacion] = (clasificaciones[r.clasificacion] || 0) + 1;
-    }
-    const perfilDominante = Object.keys(clasificaciones).reduce((a, b) => clasificaciones[a] > clasificaciones[b] ? a : b);
-    salida.push("\nDistribución de perfiles fuzzy:");
-    for (const [k, v] of Object.entries(clasificaciones)) {
-      salida.push(`  ${k}: ${v}`);
-    }
-    salida.push(`Perfil dominante: ${perfilDominante}`);
-    const ctxFuzzy = document.getElementById("graficaFuzzy").getContext("2d");
-    if (window.graficaFuzzy) window.graficaFuzzy.destroy();
-    window.graficaFuzzy = new Chart(ctxFuzzy, {
-      type: "bar",
-      data: {
-        labels: Object.keys(clasificaciones),
-        datasets: [{
-          label: "Distribución de Perfiles Fuzzy",
-          data: Object.values(clasificaciones),
-          backgroundColor: ["rgba(153, 102, 255, 0.5)", "rgba(255, 159, 64, 0.5)", "rgba(255, 205, 86, 0.5)"],
-          borderWidth: 1
-        }]
-      },
-      options: { responsive: true, scales: { y: { beginAtZero: true } } }
-    });
-
-    // Correlación y finales
-    const promedio = campo => data.reduce((a, b) => a + (b[campo] || 0), 0) / data.length;
-    const avgX = promedio("tiempo_jugado_seg");
-    const avgY = promedio("total_decisiones");
-    const numerador = data.reduce((sum, r) => sum + ((r.tiempo_jugado_seg - avgX) * (r.total_decisiones - avgY)), 0);
-    const denomX = Math.sqrt(data.reduce((sum, r) => sum + ((r.tiempo_jugado_seg - avgX) ** 2), 0));
-    const denomY = Math.sqrt(data.reduce((sum, r) => sum + ((r.total_decisiones - avgY) ** 2), 0));
-    const correlacion = numerador / (denomX * denomY);
-    salida.push(`\nCorrelación entre tiempo jugado y decisiones tomadas: ${correlacion.toFixed(2)}`);
 
     const finales = {};
     for (const r of data) {
@@ -203,7 +122,89 @@ async function analizarDatos() {
     }
     salida.push(`Final más frecuente: ${finalMasComun}`);
 
-    // CONCLUSIONES COMPLETAS
+    const promedio = (campo) => data.reduce((a, b) => a + (b[campo] || 0), 0) / data.length;
+    salida.push(`\nTiempo promedio jugado: ${promedio('tiempo_jugado_seg').toFixed(2)} segundos`);
+    salida.push(`Tiempo promedio de decisión: ${promedio('tiempo_decision').toFixed(2)} segundos`);
+
+    const clasificaciones = {};
+    for (const r of data) {
+      clasificaciones[r.clasificacion] = (clasificaciones[r.clasificacion] || 0) + 1;
+    }
+    const perfilDominante = Object.keys(clasificaciones).reduce((a, b) => clasificaciones[a] > clasificaciones[b] ? a : b);
+
+    salida.push("\nDistribución de perfiles fuzzy:");
+    for (const [k, v] of Object.entries(clasificaciones)) {
+      salida.push(`  ${k}: ${v}`);
+    }
+    salida.push(`Perfil dominante: ${perfilDominante}`);
+
+    // 🔵 AGREGADO: Distribución de perfiles fuzzy por género
+    const fuzzyGenero = {
+      masculino: { Impulsivo: 0, Equilibrado: 0, Reflexivo: 0 },
+      femenino: { Impulsivo: 0, Equilibrado: 0, Reflexivo: 0 }
+    };
+    for (const r of data) {
+      const genero = (r.genero || "").toLowerCase();
+      if (genero === "masculino" && fuzzyGenero.masculino.hasOwnProperty(r.clasificacion)) {
+        fuzzyGenero.masculino[r.clasificacion]++;
+      } else if (genero === "femenino" && fuzzyGenero.femenino.hasOwnProperty(r.clasificacion)) {
+        fuzzyGenero.femenino[r.clasificacion]++;
+      }
+    }
+    salida.push("\nDistribución de perfiles fuzzy por género:");
+    for (const genero of ["masculino", "femenino"]) {
+      salida.push(`  ${genero}:`);
+      for (const [perfil, count] of Object.entries(fuzzyGenero[genero])) {
+        salida.push(`    ${perfil}: ${count}`);
+      }
+    }
+
+    // 🔵 AGREGADO: Gráfica de perfiles fuzzy por género
+    const ctxFuzzyGenero = document.getElementById("graficaFuzzyGenero").getContext("2d");
+    if (window.graficaFuzzyGenero) window.graficaFuzzyGenero.destroy();
+    window.graficaFuzzyGenero = new Chart(ctxFuzzyGenero, {
+      type: "bar",
+      data: {
+        labels: ["Impulsivo", "Equilibrado", "Reflexivo"],
+        datasets: [
+          {
+            label: "Masculino",
+            data: [
+              fuzzyGenero.masculino.Impulsivo,
+              fuzzyGenero.masculino.Equilibrado,
+              fuzzyGenero.masculino.Reflexivo
+            ],
+            backgroundColor: "rgba(0, 0, 139, 0.5)",
+            borderColor: "rgba(0, 0, 139, 1)",
+            borderWidth: 1
+          },
+          {
+            label: "Femenino",
+            data: [
+              fuzzyGenero.femenino.Impulsivo,
+              fuzzyGenero.femenino.Equilibrado,
+              fuzzyGenero.femenino.Reflexivo
+            ],
+            backgroundColor: "rgba(255, 105, 180, 0.5)",
+            borderColor: "rgba(255, 105, 180, 1)",
+            borderWidth: 1
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        scales: { y: { beginAtZero: true } }
+      }
+    });
+
+    const avgX = promedio("tiempo_jugado_seg");
+    const avgY = promedio("total_decisiones");
+    const numerador = data.reduce((sum, r) => sum + ((r.tiempo_jugado_seg - avgX) * (r.total_decisiones - avgY)), 0);
+    const denomX = Math.sqrt(data.reduce((sum, r) => sum + ((r.tiempo_jugado_seg - avgX) ** 2), 0));
+    const denomY = Math.sqrt(data.reduce((sum, r) => sum + ((r.total_decisiones - avgY) ** 2), 0));
+    const correlacion = numerador / (denomX * denomY);
+    salida.push(`\nCorrelación entre tiempo jugado y decisiones tomadas: ${correlacion.toFixed(2)}`);
+
     salida.push("\n--- CONCLUSIÓN GENERAL DEL GRUPO ---\n");
 
     if (perfilDominante === "Reflexivo") {
@@ -240,26 +241,10 @@ async function analizarDatos() {
       salida.push(`El final más frecuente fue '${finalMasComun}', lo cual puede ser un punto interesante para rediseñar ramas narrativas.`);
     }
 
-    salida.push(totalMasculino > totalFemenino ? "Predominó la participación masculina, lo que pudo influir en la narrativa." :
-                 totalFemenino > totalMasculino ? "Predominó la participación femenina, aportando matices distintos." :
-                 "La participación fue equilibrada entre géneros.");
-
     document.getElementById("resultado").innerText = salida.join("\n");
   } catch (err) {
     document.getElementById("resultado").innerText = `❌ Error: ${err.message}`;
   }
 }
 
-window.mostrarAnalisis = () => {
-  cargarEscuelas();
-  analizarDatos();
-  actualizarNombreEscuela();
-};
-
-window.actualizarNombreEscuela = () => {
-  const escuela = document.getElementById("escuelaSelect").value || "Todas las Escuelas";
-  document.getElementById("nombreEscuela").innerText = escuela;
-  document.getElementById("nombreEscuelaRol").innerText = escuela;
-  document.getElementById("nombreEscuelaGenero").innerText = escuela;
-  document.getElementById("nombreEscuelaFuzzy").innerText = escuela;
-};
+window.mostrarAnalisis = analizarDatos;
