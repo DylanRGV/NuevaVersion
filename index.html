@@ -62,6 +62,9 @@
       font-family: monospace;
       font-size: 1rem;
       color: #111;
+      /* ✅ Ajuste para que muestre todo el texto completo */
+      max-height: none;
+      overflow-y: visible;
     }
   </style>
 </head>
@@ -123,7 +126,7 @@
       <div class="tab-pane fade" id="analisis" role="tabpanel">
         <h3 class="mb-3">Análisis General del Grupo</h3>
 
-        <!-- NUEVO: Selector de escuela -->
+        <!-- Selector de escuela -->
         <div class="mb-3">
           <label for="escuelaSelect" class="form-label">Filtrar por escuela:</label>
           <select id="escuelaSelect" class="form-select" onchange="mostrarAnalisis()">
