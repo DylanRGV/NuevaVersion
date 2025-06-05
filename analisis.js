@@ -79,7 +79,7 @@ async function analizarDatos() {
     }
     salida.push(`Rol más frecuente: ${rolMasFrecuente}`);
 
-    // --- AGREGADO: CREAR GRÁFICA ---
+    // --- AGREGADO: GRÁFICA GENERAL por rol ---
     const ctx = document.getElementById("graficaRoles").getContext("2d");
     if (window.grafica) window.grafica.destroy();
     window.grafica = new Chart(ctx, {
@@ -107,9 +107,65 @@ async function analizarDatos() {
       options: {
         responsive: true,
         scales: {
-          y: {
-            beginAtZero: true
+          y: { beginAtZero: true }
+        }
+      }
+    });
+
+    // --- AGREGADO: GRÁFICA POR GÉNERO Y ROL ---
+    const roles = ["Acosador", "Víctima", "Observador Activo", "Observador Pasivo"];
+    const decisionesGenero = {
+      masculino: [0, 0, 0, 0],
+      femenino: [0, 0, 0, 0]
+    };
+
+    for (const r of data) {
+      const genero = (r.genero || "desconocido").toLowerCase();
+      if (genero !== "masculino" && genero !== "femenino") continue;
+
+      decisionesGenero[genero][0] += r.decisiones_acosador || 0;
+      decisionesGenero[genero][1] += r.decisiones_victima || 0;
+      decisionesGenero[genero][2] += r.decisiones_observador_activo || 0;
+      decisionesGenero[genero][3] += r.decisiones_observador_pasivo || 0;
+    }
+
+    // Crear canvas dinámicamente si no existe
+    let canvasGenero = document.getElementById("graficaGenero");
+    if (!canvasGenero) {
+      canvasGenero = document.createElement("canvas");
+      canvasGenero.id = "graficaGenero";
+      canvasGenero.width = 400;
+      canvasGenero.height = 200;
+      document.querySelector(".container").appendChild(canvasGenero);
+    }
+
+    const ctxGenero = canvasGenero.getContext("2d");
+    if (window.graficaGenero) window.graficaGenero.destroy();
+    window.graficaGenero = new Chart(ctxGenero, {
+      type: "bar",
+      data: {
+        labels: roles,
+        datasets: [
+          {
+            label: "Masculino",
+            data: decisionesGenero.masculino,
+            backgroundColor: "rgba(0, 0, 139, 0.5)", // azul marino
+            borderColor: "rgba(0, 0, 139, 1)",
+            borderWidth: 1
+          },
+          {
+            label: "Femenino",
+            data: decisionesGenero.femenino,
+            backgroundColor: "rgba(255, 105, 180, 0.5)", // rosa
+            borderColor: "rgba(255, 105, 180, 1)",
+            borderWidth: 1
           }
+        ]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          y: { beginAtZero: true }
         }
       }
     });
@@ -194,5 +250,4 @@ async function analizarDatos() {
   }
 }
 
-// Esta función la llamas desde el botón
 window.mostrarAnalisis = analizarDatos;
