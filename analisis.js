@@ -1,5 +1,5 @@
 const SUPABASE_URL = "https://tdvdhqhvzwqyvezunwwh.supabase.co/rest/v1/Base";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkdmRocWh2endxeXZlenVud3doIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMxMjg0MTksImV4cCI6MjA1ODcwNDQxOX0.pZ1GzHfUjZ1i1LI5bLZhAa_rtQk82O-9xkRKbQeQkfc"; // tu clave real
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."; // tu clave real
 
 function tiempoASegundos(tiempo) {
   try {
@@ -162,6 +162,70 @@ async function analizarDatos() {
       salida.push("El final más común fue 'Gym', lo cual podría representar intención de superación personal en la narrativa.");
     } else {
       salida.push(`El final más frecuente fue '${finalMasComun}', lo cual puede ser un punto interesante para rediseñar ramas narrativas.`);
+    }
+
+    // ✅ GRÁFICAS (verificación para crear solo si existe el canvas)
+    if (document.getElementById("graficaRoles")) {
+      const ctx = document.getElementById("graficaRoles").getContext("2d");
+      if (window.grafica && window.grafica.destroy) window.grafica.destroy();
+      window.grafica = new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: Object.keys(decisiones_totales),
+          datasets: [{
+            label: "Total de Decisiones por Rol",
+            data: Object.values(decisiones_totales),
+            backgroundColor: ["#ff6384", "#36a2eb", "#ffce56", "#4bc0c0"],
+            borderWidth: 1
+          }]
+        },
+        options: { responsive: true, scales: { y: { beginAtZero: true } } }
+      });
+    }
+
+    if (document.getElementById("graficaGenero")) {
+      const roles = ["Acosador", "Víctima", "Observador Activo", "Observador Pasivo"];
+      const decisionesGenero = { masculino: [0, 0, 0, 0], femenino: [0, 0, 0, 0] };
+      for (const r of data) {
+        const genero = (r.genero || "").toLowerCase();
+        if (genero === "masculino") {
+          decisionesGenero.masculino[0] += r.decisiones_acosador || 0;
+          decisionesGenero.masculino[1] += r.decisiones_victima || 0;
+          decisionesGenero.masculino[2] += r.decisiones_observador_activo || 0;
+          decisionesGenero.masculino[3] += r.decisiones_observador_pasivo || 0;
+        } else if (genero === "femenino") {
+          decisionesGenero.femenino[0] += r.decisiones_acosador || 0;
+          decisionesGenero.femenino[1] += r.decisiones_victima || 0;
+          decisionesGenero.femenino[2] += r.decisiones_observador_activo || 0;
+          decisionesGenero.femenino[3] += r.decisiones_observador_pasivo || 0;
+        }
+      }
+
+      const ctxGenero = document.getElementById("graficaGenero").getContext("2d");
+      if (window.graficaGenero && window.graficaGenero.destroy) window.graficaGenero.destroy();
+      window.graficaGenero = new Chart(ctxGenero, {
+        type: "bar",
+        data: {
+          labels: roles,
+          datasets: [
+            {
+              label: "Masculino",
+              data: decisionesGenero.masculino,
+              backgroundColor: "rgba(0, 0, 139, 0.5)",
+              borderColor: "rgba(0, 0, 139, 1)",
+              borderWidth: 1
+            },
+            {
+              label: "Femenino",
+              data: decisionesGenero.femenino,
+              backgroundColor: "rgba(255, 105, 180, 0.5)",
+              borderColor: "rgba(255, 105, 180, 1)",
+              borderWidth: 1
+            }
+          ]
+        },
+        options: { responsive: true, scales: { y: { beginAtZero: true } } }
+      });
     }
 
     document.getElementById("resultado").innerText = salida.join("\n");
