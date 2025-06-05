@@ -59,9 +59,14 @@
 
     <h1>Dashboard de Jugadores</h1>
 
+    <!-- Botón para exportar CSV -->
+    <div class="mb-3">
+      <button onclick="exportarCSV()" class="btn btn-success">Descargar CSV</button>
+    </div>
+
     <!-- Botón de actualización independiente -->
     <div class="mb-3">
-      <button class="btn btn-success mb-2" onclick="mostrarAnalisis()">🔄 Cargar análisis y actualizar datos</button>
+      <button class="btn btn-primary mb-2" onclick="mostrarAnalisis()">🔄 Cargar análisis y actualizar datos</button>
     </div>
 
     <!-- Filtro de escuela -->
@@ -88,6 +93,12 @@
     <details>
       <summary> Gráfica: Decisiones por Género - <span id="nombreEscuelaGenero">Todas las Escuelas</span></summary>
       <canvas id="graficaGenero" width="400" height="200"></canvas>
+    </details>
+
+    <!-- Gráfica: Distribución de perfiles fuzzy por género -->
+    <details>
+      <summary> Gráfica: Distribución de Perfiles Fuzzy por Género - <span id="nombreEscuelaFuzzy">Todas las Escuelas</span></summary>
+      <canvas id="graficaFuzzyGenero" width="400" height="200"></canvas>
     </details>
 
     <!-- Tabla de jugadores -->
