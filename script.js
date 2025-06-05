@@ -64,35 +64,45 @@ document.addEventListener("DOMContentLoaded", async () => {
     .subscribe();
 
   async function exportarCSV() {
-    const { data, error } = await supabase.from("Base").select("*");
-    if (error) {
-      console.error("Error al exportar:", error.message);
-      return;
-    }
+  const escuelaSeleccionada = document.getElementById("escuelaSelect")?.value || "";
 
-    if (!data || data.length === 0) {
-      alert("No hay datos para exportar.");
-      return;
-    }
+  let { data, error } = await supabase.from("Base").select("*");
 
-    const encabezados = Object.keys(data[0]).join(",");
-    const filas = data.map(fila =>
-      Object.values(fila)
-        .map(valor => `"${valor}"`)
-        .join(",")
-    ).join("\n");
-
-    const csv = [encabezados, filas].join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", "jugadores_supabase.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  if (error) {
+    console.error("Error al exportar:", error.message);
+    return;
   }
+
+  // Si hay escuela seleccionada, filtra los datos antes de exportar
+  if (escuelaSeleccionada) {
+    data = data.filter(d => d.escuela === escuelaSeleccionada);
+  }
+
+  if (!data || data.length === 0) {
+    alert("No hay datos para exportar.");
+    return;
+  }
+
+  const encabezados = Object.keys(data[0]).join(",");
+  const filas = data.map(fila =>
+    Object.values(fila)
+      .map(valor => `"${valor}"`) // Maneja textos con comas
+      .join(",")
+  ).join("\n");
+
+  const csv = [encabezados, filas].join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement("a");
+  const nombreArchivo = escuelaSeleccionada ? `jugadores_${escuelaSeleccionada}.csv` : "jugadores_todos.csv";
+  link.setAttribute("href", url);
+  link.setAttribute("download", nombreArchivo);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
 
   window.exportarCSV = exportarCSV;
 });
