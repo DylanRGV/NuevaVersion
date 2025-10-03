@@ -27,7 +27,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         <td>${j.final_obtenido || ''}</td>
         <td>${j.tiempo_decision}</td>
         <td>${j.decisiones || ''}</td>
+<<<<<<< HEAD
         <td>${j.teclas_pulsadas || ''}</td>
+=======
+>>>>>>> a54ec8d05f524bd0405732adc0eca5567596ca41
         <td>${j.escuela || ''}</td>
         <td>${j.genero || ''}</td>
         <td><button class="btn btn-danger btn-sm" onclick="eliminarJugador(${j.id})">Eliminar</button></td>
