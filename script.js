@@ -64,46 +64,88 @@ document.addEventListener("DOMContentLoaded", async () => {
     )
     .subscribe();
 
-  async function exportarCSV() {
-  const escuelaSeleccionada = document.getElementById("escuelaSelect")?.value || "";
+  // 📌 Nueva función: Exportar Excel con formato bonito
+  async function exportarExcel() {
+    const escuelaSeleccionada = document.getElementById("escuelaSelect")?.value || "";
 
-  let { data, error } = await supabase.from("Base").select("*");
+    let { data, error } = await supabase.from("Base").select("*");
 
-  if (error) {
-    console.error("Error al exportar:", error.message);
-    return;
+    if (error) {
+      console.error("Error al exportar:", error.message);
+      return;
+    }
+
+    // Si hay escuela seleccionada, filtra los datos antes de exportar
+    if (escuelaSeleccionada) {
+      data = data.filter(d => d.escuela === escuelaSeleccionada);
+    }
+
+    if (!data || data.length === 0) {
+      alert("No hay datos para exportar.");
+      return;
+    }
+
+    // Convertir los datos en formato para SheetJS
+    const ws = XLSX.utils.json_to_sheet(data);
+
+    // Rango de la hoja
+    const range = XLSX.utils.decode_range(ws['!ref']);
+    const pastelColors = [
+      "FFB6C1", // Rosa pastel
+      "FFDAB9", // Durazno
+      "E6E6FA", // Lavanda
+      "FFFACD", // Amarillo claro
+      "D1F2EB", // Verde agua
+      "CCE5FF", // Azul cielo
+      "F5CBA7", // Naranja suave
+      "F9E79F"  // Amarillo pastel
+    ];
+
+    // Colorear encabezados
+    for (let C = range.s.c; C <= range.e.c; ++C) {
+      const cell_address = XLSX.utils.encode_cell({ r: 0, c: C });
+      if (!ws[cell_address]) continue;
+      ws[cell_address].s = {
+        fill: { fgColor: { rgb: pastelColors[C % pastelColors.length] } },
+        font: { bold: true, sz: 12, color: { rgb: "000000" } },
+        alignment: { horizontal: "center", vertical: "center", wrapText: true }
+      };
+    }
+
+    // Ajustar ancho de columnas
+    const colWidths = [];
+    for (let C = range.s.c; C <= range.e.c; ++C) {
+      let maxWidth = 10;
+      for (let R = range.s.r; R <= range.e.r; ++R) {
+        const cell_address = XLSX.utils.encode_cell({ r: R, c: C });
+        const cell = ws[cell_address];
+        if (cell && cell.v) {
+          const cellLength = cell.v.toString().length;
+          if (cellLength > maxWidth) maxWidth = cellLength;
+        }
+      }
+      colWidths.push({ wch: maxWidth + 2 });
+    }
+    ws['!cols'] = colWidths;
+
+    // Crear libro y exportar
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Jugadores");
+
+    const nombreArchivo = escuelaSeleccionada ? `jugadores_${escuelaSeleccionada}.xlsx` : "jugadores_todos.xlsx";
+    XLSX.writeFile(wb, nombreArchivo);
   }
 
-  // Si hay escuela seleccionada, filtra los datos antes de exportar
-  if (escuelaSeleccionada) {
-    data = data.filter(d => d.escuela === escuelaSeleccionada);
-  }
+  // Exponer función global
+  window.exportarExcel = exportarExcel;
 
-  if (!data || data.length === 0) {
-    alert("No hay datos para exportar.");
-    return;
-  }
-
-  const encabezados = Object.keys(data[0]).join(",");
-  const filas = data.map(fila =>
-    Object.values(fila)
-      .map(valor => `"${valor}"`) // Maneja textos con comas
-      .join(",")
-  ).join("\n");
-
-  const csv = [encabezados, filas].join("\n");
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-
-  const link = document.createElement("a");
-  const nombreArchivo = escuelaSeleccionada ? `jugadores_${escuelaSeleccionada}.csv` : "jugadores_todos.csv";
-  link.setAttribute("href", url);
-  link.setAttribute("download", nombreArchivo);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-}
-
-
-  window.exportarCSV = exportarCSV;
+  // 📌 Cargar SheetJS dinámicamente si no existe
+  (function loadSheetJS() {
+    if (typeof XLSX === "undefined") {
+      const script = document.createElement("script");
+      script.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+      script.onload = () => console.log("SheetJS cargado ✅");
+      document.head.appendChild(script);
+    }
+  })();
 });
